@@ -12,7 +12,7 @@ export const login = async (username, email) => {
 };
 
 export const getUsers = async () => {
-    const response = await api.get('/users');
+    const response = await api.get(`/users?t=${Date.now()}`);
     return response.data;
 };
 
@@ -23,6 +23,11 @@ export const getMessages = async (userId, currentUserId) => {
 
 export const sendMessage = async (senderId, receiverId, message) => {
     const response = await api.post('/messages', { senderId, receiverId, message });
+    return response.data;
+};
+
+export const clearChatMessages = async (userId, currentUserId) => {
+    const response = await api.delete(`/messages/${userId}?currentUserId=${currentUserId}`);
     return response.data;
 };
 

@@ -22,10 +22,13 @@ const Login = () => {
     setError('');
 
     try {
+      console.log('Attempting login for:', username);
       const user = await loginService(username, email);
+      console.log('Login successful:', user);
       login(user);
       navigate('/');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Failed to login. Please try again.');
     } finally {
       setLoading(false);

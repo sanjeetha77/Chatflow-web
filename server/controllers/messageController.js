@@ -41,4 +41,23 @@ const getMessages = async (req, res) => {
     }
 };
 
-module.exports = { sendMessage, getMessages };
+// @desc    Clear messages for a specific chat
+// @route   DELETE /api/messages/:userId
+const clearMessages = async (req, res) => {
+    const { userId } = req.params;
+    const { currentUserId } = req.query;
+
+    try {
+        await Message.deleteMany({
+            $or: [
+                { senderId: currentUserId, receiverId: userId },
+                { senderId: userId, receiverId: currentUserId }
+            ]
+        });
+        res.status(200).json({ message: 'Chat cleared successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { sendMessage, getMessages, clearMessages };

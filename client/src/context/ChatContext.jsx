@@ -3,11 +3,22 @@ import React, { createContext, useState } from 'react';
 export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-    const [activeChat, setActiveChat] = useState(null);
+    const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [unreadCounts, setUnreadCounts] = useState({});
 
     return (
-        <ChatContext.Provider value={{ activeChat, setActiveChat, messages, setMessages }}>
+        <ChatContext.Provider value={{ 
+            selectedChat, 
+            setSelectedChat, 
+            messages, 
+            setMessages,
+            onlineUsers,
+            setOnlineUsers,
+            unreadCounts,
+            setUnreadCounts
+        }}>
             {children}
         </ChatContext.Provider>
     );

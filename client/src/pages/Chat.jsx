@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
@@ -8,54 +8,76 @@ import { socket } from '../socket/socket';
 import { getMessages } from '../services/api';
 
 const Chat = () => {
-  const { activeChat, setMessages } = useContext(ChatContext);
+  const { selectedChat, setMessages, setOnlineUsers, setUnreadCounts } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [socketConnected, setSocketConnected] = useState(false);
+  const selectedChatRef = useRef(selectedChat);
 
+  // Update ref whenever selectedChat changes
   useEffect(() => {
-    if (currentUser) {
-      socket.connect();
-      socket.emit('join', currentUser._id);
-      
-      socket.on('connect', () => setSocketConnected(true));
-      
-      socket.on('getMessage', (data) => {
-        // Only append if the message is from the currently active chat
-        // We use a functional state update to ensure we have the latest activeChat value
-        // Note: in a more complex app, we might store messages in a map by userId
-        setMessages((prevMessages) => {
-           // We might need to handle the case where the message is for a different chat
-           // For simplicity, we just add it to the current chat window if it matches the active chat
-           // In a real app, we'd update unread counts for non-active chats
-           return [...prevMessages, {
-             senderId: data.senderId,
-             message: data.message,
-             timestamp: data.timestamp
-           }];
-        });
-      });
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
 
-      return () => {
-        socket.off('getMessage');
-        socket.disconnect();
-      };
+  // Memoized fetch function to avoid recreate on every render
+  const fetchMessages = useCallback(async () => {
+    if (selectedChatRef.current && currentUser) {
+      try {
+        console.log('Fetching fresh messages from API for sync...');
+        const data = await getMessages(selectedChatRef.current._id, currentUser._id);
+        setMessages(data);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
     }
   }, [currentUser, setMessages]);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (activeChat && currentUser) {
-        try {
-          const data = await getMessages(activeChat._id, currentUser._id);
-          setMessages(data);
-        } catch (error) {
-          console.error("Failed to fetch messages:", error);
-        }
-      }
-    };
+    if (currentUser) {
+      console.log('Initializing socket connection for:', currentUser.username);
+      socket.connect();
+      
+      socket.on('connect', () => {
+        console.log('Socket connected successfully! ID:', socket.id);
+        setSocketConnected(true);
+        socket.emit('join', currentUser._id);
+      });
+      
+      socket.on('receiveMessage', async (data) => {
+        console.log('--- Socket Message Received ---');
+        const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
+        const selectedId = selectedChatRef.current?._id;
 
+        // If message is for active chat, trigger API reload instead of just appending
+        if (selectedId && senderId === selectedId) {
+          console.log('Message for active chat received. Reloading via API...');
+          await fetchMessages();
+        } else {
+          console.log('Background message. Incrementing unread count.');
+          setUnreadCounts(prev => ({
+            ...prev,
+            [senderId]: (prev[senderId] || 0) + 1
+          }));
+        }
+      });
+
+      socket.on('getOnlineUsers', (users) => {
+        console.log('Online users list updated:', users);
+        setOnlineUsers(users);
+      });
+
+      return () => {
+        socket.off('receiveMessage');
+        socket.off('getOnlineUsers');
+        socket.off('connect');
+        socket.disconnect();
+      };
+    }
+  }, [currentUser, setMessages, setOnlineUsers, setUnreadCounts, fetchMessages]);
+
+  // Fetch when chat selection changes
+  useEffect(() => {
     fetchMessages();
-  }, [activeChat, currentUser, setMessages]);
+  }, [selectedChat, fetchMessages]);
 
   return (
     <div className="chat-layout">
