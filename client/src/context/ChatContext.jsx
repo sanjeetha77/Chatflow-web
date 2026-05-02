@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const ChatContext = createContext();
 
@@ -7,6 +7,23 @@ export const ChatProvider = ({ children }) => {
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [unreadCounts, setUnreadCounts] = useState({});
+    const [loadingMessages, setLoadingMessages] = useState(false);
+    const [favourites, setFavourites] = useState(() => {
+        const saved = localStorage.getItem('chatflow_favourites');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('chatflow_favourites', JSON.stringify(favourites));
+    }, [favourites]);
+
+    const toggleFavourite = (userId) => {
+        setFavourites(prev => 
+            prev.includes(userId) 
+                ? prev.filter(id => id !== userId) 
+                : [...prev, userId]
+        );
+    };
 
     return (
         <ChatContext.Provider value={{ 
@@ -17,7 +34,11 @@ export const ChatProvider = ({ children }) => {
             onlineUsers,
             setOnlineUsers,
             unreadCounts,
-            setUnreadCounts
+            setUnreadCounts,
+            favourites,
+            toggleFavourite,
+            loadingMessages,
+            setLoadingMessages
         }}>
             {children}
         </ChatContext.Provider>

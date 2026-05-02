@@ -13,12 +13,22 @@ const ChatList = () => {
   const [error, setError] = useState('');
   
   const { currentUser } = useContext(AuthContext);
-  const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts } = useContext(ChatContext);
+  const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, favourites, onlineUsers } = useContext(ChatContext);
+
+  const formatTime = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    }).toLowerCase();
+  };
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await getUsers();
+      // Pass currentUserId to get last messages
+      const data = await getUsers(currentUser._id);
       const otherUsers = data.filter(u => u._id.toString() !== currentUser._id.toString());
       setUsers(otherUsers);
       setError('');
@@ -34,14 +44,10 @@ const ChatList = () => {
     fetchUsers();
     
     socket.on('userJoined', (userId) => {
-      console.log('User joined event received:', userId);
       fetchUsers();
     });
 
-    // Automatically refresh users list when a message arrives
-    // This ensures any newly created users or status changes are reflected
     socket.on('receiveMessage', () => {
-      console.log('Message received. Auto-refreshing user list...');
       fetchUsers();
     });
 
@@ -51,15 +57,25 @@ const ChatList = () => {
     };
   }, [currentUser]);
 
-  const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Apply search and status filters
+  const filteredUsers = users.filter(user => {
+    // Search filter
+    const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+
+    // Status filter
+    if (filter === 'Unread') {
+      return unreadCounts[user._id] > 0;
+    }
+    if (filter === 'Favourites') {
+      return favourites.includes(user._id);
+    }
+    return true;
+  });
 
   const handleUserClick = (user) => {
-    console.log('User selected:', user._id);
     setSelectedChat(user);
-    
-    // Reset unread count for this user
+    // Reset unread count
     setUnreadCounts(prev => ({
         ...prev,
         [user._id]: 0
@@ -109,8 +125,20 @@ const ChatList = () => {
         {loading && users.length === 0 ? (
           <div style={{padding: '20px', textAlign: 'center', color: 'var(--text-secondary)'}}>Loading...</div>
         ) : filteredUsers.length === 0 ? (
-          <div className="chatlist-empty" style={{padding: '20px', textAlign: 'center', color: 'var(--text-secondary)'}}>
-            {searchTerm ? 'No matches found' : 'No other users found'}
+          <div className="chatlist-empty" style={{padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)'}}>
+            {filter === 'Unread' ? (
+                <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                    <div style={{fontSize: '40px', opacity: 0.2}}>📭</div>
+                    <p>No unread messages</p>
+                </div>
+            ) : filter === 'Favourites' ? (
+                <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                    <div style={{fontSize: '40px', opacity: 0.2}}>⭐</div>
+                    <p>No favourites yet</p>
+                </div>
+            ) : (
+                <p>{searchTerm ? 'No matches found' : 'No other users found'}</p>
+            )}
           </div>
         ) : (
           filteredUsers.map((user) => (
@@ -119,22 +147,41 @@ const ChatList = () => {
               className={`chatlist-item ${selectedChat?._id === user._id ? 'active' : ''}`}
               onClick={() => handleUserClick(user)}
             >
-              <div className="avatar">
-                {user.username.charAt(0).toUpperCase()}
+              <div className="avatar-wrapper" style={{ position: 'relative' }}>
+                <div className="avatar">
+                  {user.username.charAt(0).toUpperCase()}
+                </div>
+                {onlineUsers.some(id => id.toString() === user._id.toString()) && (
+                  <div className="online-dot" style={{
+                    position: 'absolute',
+                    bottom: '2px',
+                    right: '2px',
+                    width: '12px',
+                    height: '12px',
+                    backgroundColor: '#4ade80',
+                    borderRadius: '50%',
+                    border: '2px solid white'
+                  }}></div>
+                )}
               </div>
               <div className="chat-info">
                 <div className="chat-header-info">
                   <div className="chat-name">{user.username}</div>
-                  <div className="chat-time">10:47 am</div>
+                  <div className="chat-time">
+                    {user.lastMessageTime ? formatTime(user.lastMessageTime) : ''}
+                  </div>
                 </div>
                 <div className="chat-preview-container" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                   <div className="chat-preview" style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    maxWidth: '180px'
+                    maxWidth: '180px',
+                    minHeight: '18px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '13px'
                   }}>
-                    Check out the latest design!
+                    {user.lastMessage || 'No messages yet'}
                   </div>
                   {unreadCounts[user._id] > 0 && (
                     <div className="unread-badge" style={{

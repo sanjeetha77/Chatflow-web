@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Search, MoreVertical, Phone, Video, Trash2, XCircle } from 'lucide-react';
+import { Search, MoreVertical, Phone, Video, Trash2, XCircle, Star, Loader2 } from 'lucide-react';
 import { ChatContext } from '../context/ChatContext';
 import MessageBubble from './MessageBubble';
 import InputBar from './InputBar';
@@ -8,7 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 import { socket } from '../socket/socket';
 
 const ChatWindow = () => {
-  const { selectedChat, messages, setMessages, onlineUsers } = useContext(ChatContext);
+  const { selectedChat, messages, setMessages, onlineUsers, favourites, toggleFavourite, loadingMessages } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
@@ -16,30 +16,40 @@ const ChatWindow = () => {
   const isOnline = selectedChat && onlineUsers.some(id => id.toString() === selectedChat._id.toString());
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, loadingMessages]);
 
   const handleSendMessage = async (text) => {
     try {
       if (!selectedChat) return;
 
-      console.log('Sending message via API...');
-      const newMessage = await sendMessage(currentUser._id, selectedChat._id, text);
-      console.log('Message saved in DB:', newMessage);
+      // Optimistic update
+      const tempMessage = {
+        _id: Date.now().toString(),
+        senderId: currentUser._id,
+        receiverId: selectedChat._id,
+        message: text,
+        timestamp: new Date().toISOString(),
+        sending: true
+      };
       
-      console.log('Emitting sendMessage socket event...');
+      setMessages(prev => [...prev, tempMessage]);
+
+      const newMessage = await sendMessage(currentUser._id, selectedChat._id, text);
+      
+      // Update the optimistic message with real data
+      setMessages(prev => prev.map(m => m._id === tempMessage._id ? newMessage : m));
+
       socket.emit('sendMessage', {
         senderId: currentUser._id,
         receiverId: selectedChat._id,
         message: text,
         timestamp: newMessage.timestamp
       });
-
-      setMessages(prev => [...prev, newMessage]);
     } catch (err) {
       console.error('Failed to send message:', err);
     }
@@ -74,8 +84,22 @@ const ChatWindow = () => {
     <div className="chatwindow-container">
       <div className="chatwindow-header">
         <div className="chatwindow-header-left">
-          <div className="avatar">
-            {selectedChat.username.charAt(0).toUpperCase()}
+          <div className="avatar-wrapper" style={{ position: 'relative' }}>
+            <div className="avatar">
+              {selectedChat.username.charAt(0).toUpperCase()}
+            </div>
+            {isOnline && (
+              <div className="online-dot" style={{
+                position: 'absolute',
+                bottom: '2px',
+                right: '2px',
+                width: '12px',
+                height: '12px',
+                backgroundColor: '#4ade80',
+                borderRadius: '50%',
+                border: '2px solid white'
+              }}></div>
+            )}
           </div>
           <div className="chat-info">
             <h3>{selectedChat.username}</h3>
@@ -99,6 +123,33 @@ const ChatWindow = () => {
               width: '180px',
               marginTop: '8px'
             }}>
+              <div 
+                className="menu-item" 
+                onClick={() => {
+                  toggleFavourite(selectedChat._id);
+                  setShowMenu(false);
+                }}
+                style={{
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                {favourites.includes(selectedChat._id) ? (
+                  <>
+                    <XCircle size={18} color="#ff4b4b" />
+                    <span style={{color: '#ff4b4b'}}>Remove Favourite</span>
+                  </>
+                ) : (
+                  <>
+                    <Star size={18} color="var(--accent-green)" />
+                    <span>Add Favourite</span>
+                  </>
+                )}
+              </div>
               <div 
                 className="menu-item" 
                 onClick={handleClearChat}
@@ -135,7 +186,11 @@ const ChatWindow = () => {
       </div>
 
       <div className="chatwindow-messages">
-        {messages.length === 0 ? (
+        {loadingMessages ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Loader2 size={32} className="spin" color="var(--accent-green)" />
+          </div>
+        ) : messages.length === 0 ? (
           <div className="no-messages" style={{textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)'}}>
             No messages yet. Start the conversation!
           </div>
