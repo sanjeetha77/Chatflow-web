@@ -7,7 +7,9 @@ export const ChatProvider = ({ children }) => {
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [unreadCounts, setUnreadCounts] = useState({});
+    const [lastMessages, setLastMessages] = useState({}); // { userId: { message, timestamp } }
     const [loadingMessages, setLoadingMessages] = useState(false);
+    const [typingUsers, setTypingUsers] = useState({}); // { userId: boolean }
     const [favourites, setFavourites] = useState(() => {
         const saved = localStorage.getItem('chatflow_favourites');
         return saved ? JSON.parse(saved) : [];
@@ -35,10 +37,14 @@ export const ChatProvider = ({ children }) => {
             setOnlineUsers,
             unreadCounts,
             setUnreadCounts,
+            lastMessages,
+            setLastMessages,
             favourites,
             toggleFavourite,
             loadingMessages,
-            setLoadingMessages
+            setLoadingMessages,
+            typingUsers,
+            setTypingUsers
         }}>
             {children}
         </ChatContext.Provider>

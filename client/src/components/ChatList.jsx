@@ -13,7 +13,7 @@ const ChatList = () => {
   const [error, setError] = useState('');
   
   const { currentUser } = useContext(AuthContext);
-  const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, favourites, onlineUsers } = useContext(ChatContext);
+  const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, favourites, onlineUsers, typingUsers, lastMessages, setLastMessages } = useContext(ChatContext);
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -27,10 +27,22 @@ const ChatList = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Pass currentUserId to get last messages
       const data = await getUsers(currentUser._id);
       const otherUsers = data.filter(u => u._id.toString() !== currentUser._id.toString());
       setUsers(otherUsers);
+      
+      // Initialize lastMessages from backend data
+      const initialLastMessages = {};
+      otherUsers.forEach(user => {
+        if (user.lastMessage) {
+          initialLastMessages[user._id] = {
+            message: user.lastMessage,
+            timestamp: user.lastMessageTime
+          };
+        }
+      });
+      setLastMessages(prev => ({ ...initialLastMessages, ...prev }));
+      
       setError('');
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -48,6 +60,7 @@ const ChatList = () => {
     });
 
     socket.on('receiveMessage', () => {
+      // Still fetch users to update status/order, but lastMessages handles preview instantly
       fetchUsers();
     });
 
@@ -59,11 +72,9 @@ const ChatList = () => {
 
   // Apply search and status filters
   const filteredUsers = users.filter(user => {
-    // Search filter
     const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
 
-    // Status filter
     if (filter === 'Unread') {
       return unreadCounts[user._id] > 0;
     }
@@ -75,7 +86,6 @@ const ChatList = () => {
 
   const handleUserClick = (user) => {
     setSelectedChat(user);
-    // Reset unread count
     setUnreadCounts(prev => ({
         ...prev,
         [user._id]: 0
@@ -141,68 +151,73 @@ const ChatList = () => {
             )}
           </div>
         ) : (
-          filteredUsers.map((user) => (
-            <div 
-              key={user._id} 
-              className={`chatlist-item ${selectedChat?._id === user._id ? 'active' : ''}`}
-              onClick={() => handleUserClick(user)}
-            >
-              <div className="avatar-wrapper" style={{ position: 'relative' }}>
-                <div className="avatar">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
-                {onlineUsers.some(id => id.toString() === user._id.toString()) && (
-                  <div className="online-dot" style={{
-                    position: 'absolute',
-                    bottom: '2px',
-                    right: '2px',
-                    width: '12px',
-                    height: '12px',
-                    backgroundColor: '#4ade80',
-                    borderRadius: '50%',
-                    border: '2px solid white'
-                  }}></div>
-                )}
-              </div>
-              <div className="chat-info">
-                <div className="chat-header-info">
-                  <div className="chat-name">{user.username}</div>
-                  <div className="chat-time">
-                    {user.lastMessageTime ? formatTime(user.lastMessageTime) : ''}
+          filteredUsers.map((user) => {
+            const isTyping = typingUsers[user._id];
+            const lastMsg = lastMessages[user._id];
+            if (isTyping) console.log(`[ChatList] Rendering user ${user.username} with typing=true`);
+            
+            return (
+              <div 
+                key={user._id} 
+                className={`chatlist-item ${selectedChat?._id === user._id ? 'active' : ''}`}
+                onClick={() => handleUserClick(user)}
+              >
+                <div className="avatar-wrapper" style={{ position: 'relative' }}>
+                  <div className="avatar">
+                    {user.username.charAt(0).toUpperCase()}
                   </div>
-                </div>
-                <div className="chat-preview-container" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                  <div className="chat-preview" style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '180px',
-                    minHeight: '18px',
-                    color: 'var(--text-secondary)',
-                    fontSize: '13px'
-                  }}>
-                    {user.lastMessage || 'No messages yet'}
-                  </div>
-                  {unreadCounts[user._id] > 0 && (
-                    <div className="unread-badge" style={{
-                        backgroundColor: 'var(--accent-green)',
-                        color: '#000',
-                        borderRadius: '50%',
-                        width: '20px',
-                        height: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                    }}>
-                        {unreadCounts[user._id]}
-                    </div>
+                  {onlineUsers.some(id => id.toString() === user._id.toString()) && (
+                    <div className="online-dot" style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      right: '2px',
+                      width: '12px',
+                      height: '12px',
+                      backgroundColor: '#4ade80',
+                      borderRadius: '50%',
+                      border: '2px solid white'
+                    }}></div>
                   )}
                 </div>
+                <div className="chat-info">
+                  <div className="chat-header-info">
+                    <div className="chat-name">{user.username}</div>
+                    <div className="chat-time">
+                      {lastMsg?.timestamp ? formatTime(lastMsg.timestamp) : ''}
+                    </div>
+                  </div>
+                  <div className="chat-preview-container" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div className={`chat-preview ${isTyping ? 'typing-text' : ''}`} style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '180px',
+                      minHeight: '18px',
+                      fontSize: '13px'
+                    }}>
+                      {isTyping ? 'typing...' : (lastMsg?.message || 'No messages yet')}
+                    </div>
+                    {unreadCounts[user._id] > 0 && (
+                      <div className="unread-badge" style={{
+                          backgroundColor: 'var(--accent-green)',
+                          color: '#000',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '11px',
+                          fontWeight: 'bold'
+                      }}>
+                          {unreadCounts[user._id]}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

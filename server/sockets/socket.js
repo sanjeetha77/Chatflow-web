@@ -6,52 +6,66 @@ const socketIO = (server) => {
         }
     });
 
-    // Phase 1: In-memory map for online users
-    let onlineUsers = {}; // { userId: socketId }
+    let onlineUsers = new Set(); 
 
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
 
-        // Phase 2: Join event
         socket.on('join', (userId) => {
-            onlineUsers[userId] = socket.id;
-            console.log(`User ${userId} joined. Current onlineUsers:`, onlineUsers);
+            const uid = String(userId);
+            socket.join(uid);
+            onlineUsers.add(uid);
             
-            // Broadcast to everyone that a new user is online
-            io.emit('userJoined', userId);
-            io.emit('getOnlineUsers', Object.keys(onlineUsers));
+            console.log(`[Server] User ${uid} joined. Online users:`, Array.from(onlineUsers));
+            io.emit('getOnlineUsers', Array.from(onlineUsers));
         });
 
-        // Phase 3: Message handling
         socket.on('sendMessage', (data) => {
-            console.log('Server received sendMessage:', data);
             const { senderId, receiverId, message, timestamp } = data;
-            
-            const receiverSocket = onlineUsers[receiverId];
-            console.log(`Searching for receiverId ${receiverId}. Found socketId: ${receiverSocket}`);
+            const rid = String(receiverId);
+            io.to(rid).emit('receiveMessage', {
+                senderId,
+                message,
+                timestamp: timestamp || new Date()
+            });
+        });
 
-            if (receiverSocket) {
-                console.log(`Emitting receiveMessage to socket ${receiverSocket}`);
-                io.to(receiverSocket).emit('receiveMessage', {
-                    senderId,
-                    message,
-                    timestamp: timestamp || new Date()
-                });
-            } else {
-                console.log(`Receiver ${receiverId} is NOT online. Available users:`, Object.keys(onlineUsers));
-            }
+        // Typing indicators with the specific logs you requested
+        socket.on('typing', (data) => {
+            const { senderId, receiverId } = data;
+            const rid = String(receiverId);
+            
+            console.log("Typing event received:", data);
+            
+            // Check if anyone is in that room
+            const room = io.sockets.adapter.rooms.get(rid);
+            console.log(`Receiver room ${rid} members:`, room ? room.size : 0);
+
+            // Emit to the receiver's room
+            io.to(rid).emit('typing', { senderId });
+        });
+
+        socket.on('stopTyping', (data) => {
+            const { senderId, receiverId } = data;
+            const rid = String(receiverId);
+            io.to(rid).emit('stopTyping', { senderId });
+        });
+
+        socket.on('disconnecting', () => {
+            const rooms = Array.from(socket.rooms);
+            rooms.forEach(userId => {
+                if (userId !== socket.id) {
+                    const socketsInRoom = io.sockets.adapter.rooms.get(userId);
+                    if (socketsInRoom && socketsInRoom.size === 1) {
+                        onlineUsers.delete(String(userId));
+                    }
+                }
+            });
         });
 
         socket.on('disconnect', () => {
+            io.emit('getOnlineUsers', Array.from(onlineUsers));
             console.log('User disconnected:', socket.id);
-            // Remove user from map
-            for (const [userId, socketId] of Object.entries(onlineUsers)) {
-                if (socketId === socket.id) {
-                    delete onlineUsers[userId];
-                    break;
-                }
-            }
-            io.emit('getOnlineUsers', Object.keys(onlineUsers));
         });
     });
 

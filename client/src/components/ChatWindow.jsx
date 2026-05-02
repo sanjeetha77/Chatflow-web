@@ -8,12 +8,35 @@ import { AuthContext } from '../context/AuthContext';
 import { socket } from '../socket/socket';
 
 const ChatWindow = () => {
-  const { selectedChat, messages, setMessages, onlineUsers, favourites, toggleFavourite, loadingMessages } = useContext(ChatContext);
+  const { selectedChat, messages, setMessages, onlineUsers, favourites, toggleFavourite, loadingMessages, typingUsers, setTypingUsers, setLastMessages } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
 
   const isOnline = selectedChat && onlineUsers.some(id => id.toString() === selectedChat._id.toString());
+  const isTyping = selectedChat && typingUsers[selectedChat._id];
+
+  // Direct typing listener for reliability as requested
+  useEffect(() => {
+    if (!selectedChat) return;
+
+    const handleTypingEvent = (data) => {
+      const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
+      console.log('[ChatWindow] Typing received from:', senderId);
+      
+      if (senderId === selectedChat._id) {
+        setTypingUsers(prev => ({ ...prev, [senderId]: true }));
+        
+        // Auto-clear after 2 seconds
+        setTimeout(() => {
+          setTypingUsers(prev => ({ ...prev, [senderId]: false }));
+        }, 2000);
+      }
+    };
+
+    socket.on('typing', handleTypingEvent);
+    return () => socket.off('typing', handleTypingEvent);
+  }, [selectedChat, setTypingUsers]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,9 +50,9 @@ const ChatWindow = () => {
     try {
       if (!selectedChat) return;
 
-      // Optimistic update
+      const tempId = Date.now().toString();
       const tempMessage = {
-        _id: Date.now().toString(),
+        _id: tempId,
         senderId: currentUser._id,
         receiverId: selectedChat._id,
         message: text,
@@ -38,11 +61,17 @@ const ChatWindow = () => {
       };
       
       setMessages(prev => [...prev, tempMessage]);
+      
+      setLastMessages(prev => ({
+        ...prev,
+        [selectedChat._id]: {
+          message: text,
+          timestamp: tempMessage.timestamp
+        }
+      }));
 
       const newMessage = await sendMessage(currentUser._id, selectedChat._id, text);
-      
-      // Update the optimistic message with real data
-      setMessages(prev => prev.map(m => m._id === tempMessage._id ? newMessage : m));
+      setMessages(prev => prev.map(m => m._id === tempId ? newMessage : m));
 
       socket.emit('sendMessage', {
         senderId: currentUser._id,
@@ -103,7 +132,9 @@ const ChatWindow = () => {
           </div>
           <div className="chat-info">
             <h3>{selectedChat.username}</h3>
-            <span className="status">{isOnline ? 'Online' : 'Offline'}</span>
+            <span className={`status ${isTyping ? 'typing' : ''}`} style={{ color: isTyping ? 'var(--accent-green)' : 'inherit' }}>
+              {isTyping ? 'typing...' : (isOnline ? 'Online' : 'Offline')}
+            </span>
           </div>
         </div>
         <div className="chatwindow-header-right" style={{position: 'relative'}}>
@@ -164,21 +195,6 @@ const ChatWindow = () => {
               >
                 <XCircle size={18} />
                 <span>Clear chat</span>
-              </div>
-              <div 
-                className="menu-item" 
-                onClick={handleClearChat}
-                style={{
-                  padding: '10px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                <Trash2 size={18} />
-                <span>Delete chat</span>
               </div>
             </div>
           )}

@@ -1,11 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Plus, Smile, Mic, Send } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
+import { socket } from '../socket/socket';
+import { AuthContext } from '../context/AuthContext';
+import { ChatContext } from '../context/ChatContext';
 
 const InputBar = ({ onSendMessage, disabled }) => {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  
+  const { currentUser } = useContext(AuthContext);
+  const { selectedChat } = useContext(ChatContext);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -18,9 +25,38 @@ const InputBar = ({ onSendMessage, disabled }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleTyping = () => {
+    if (!selectedChat || !currentUser) return;
+
+    console.log(`[Client] Emitting typing: ${currentUser._id} -> ${selectedChat._id}`);
+    // Emit typing event
+    socket.emit('typing', {
+      senderId: currentUser._id,
+      receiverId: selectedChat._id
+    });
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    // Set new timeout to stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('stopTyping', {
+        senderId: currentUser._id,
+        receiverId: selectedChat._id
+      });
+    }, 2000);
+  };
+
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     if (message.trim() && !disabled) {
+      // Clear typing indicator immediately on send
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socket.emit('stopTyping', {
+        senderId: currentUser._id,
+        receiverId: selectedChat._id
+      });
+
       onSendMessage(message.trim());
       setMessage('');
       setShowEmojiPicker(false);
@@ -29,6 +65,7 @@ const InputBar = ({ onSendMessage, disabled }) => {
 
   const onEmojiClick = (emojiData) => {
     setMessage(prev => prev + emojiData.emoji);
+    handleTyping();
   };
 
   return (
@@ -70,7 +107,10 @@ const InputBar = ({ onSendMessage, disabled }) => {
           type="text"
           placeholder="Type a message"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            handleTyping();
+          }}
           disabled={disabled}
           onFocus={() => setShowEmojiPicker(false)}
         />

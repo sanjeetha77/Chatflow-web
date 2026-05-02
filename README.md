@@ -21,6 +21,7 @@ A premium, full-stack WhatsApp-inspired messaging application built with the MER
 ## 📂 Project Structure
 
 ### Backend (`/server`)
+
 - `server.js`: Entry point and middleware setup.
 - `routes/`: API endpoint definitions.
 - `controllers/`: Logic for authentication, users, and messages.
@@ -28,6 +29,7 @@ A premium, full-stack WhatsApp-inspired messaging application built with the MER
 - `sockets/`: Socket.IO event handlers.
 
 ### Frontend (`/client`)
+
 - `src/components/`: Reusable UI components (Sidebar, ChatList, ChatWindow, etc.).
 - `src/pages/`: Main application pages (Login, Chat).
 - `src/context/`: State management for Auth and Chat.
@@ -37,10 +39,12 @@ A premium, full-stack WhatsApp-inspired messaging application built with the MER
 ## ⚙️ Setup Instructions
 
 ### Prerequisites
+
 - Node.js installed.
 - MongoDB instance (local or Atlas).
 
 ### 1. Backend Setup
+
 1. Navigate to the `server` directory.
 2. Install dependencies:
    ```bash
@@ -57,6 +61,7 @@ A premium, full-stack WhatsApp-inspired messaging application built with the MER
    ```
 
 ### 2. Frontend Setup
+
 1. Navigate to the `client` directory.
 2. Install dependencies:
    ```bash
@@ -69,16 +74,15 @@ A premium, full-stack WhatsApp-inspired messaging application built with the MER
 
 ## 📡 API Endpoints
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| POST | `/api/auth/login` | Login/Register a user |
-| GET | `/api/users` | Fetch all registered users |
-| GET | `/api/messages/:userId` | Get message history with a user |
-| POST | `/api/messages` | Send a new message |
+| Method | Endpoint                | Description                     |
+| :----- | :---------------------- | :------------------------------ |
+| POST   | `/api/auth/login`       | Login/Register a user           |
+| GET    | `/api/users`            | Fetch all registered users      |
+| GET    | `/api/messages/:userId` | Get message history with a user |
+| POST   | `/api/messages`         | Send a new message              |
 
 ## 📸 Screenshots
 
-*(Add screenshots here after deployment)*
+_(Add screenshots here after deployment)_
 
 ---
-Built with ❤️ by Antigravity.

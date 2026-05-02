@@ -8,7 +8,7 @@ import { socket } from '../socket/socket';
 import { getMessages } from '../services/api';
 
 const Chat = () => {
-  const { selectedChat, setMessages, setOnlineUsers, setUnreadCounts, setLoadingMessages } = useContext(ChatContext);
+  const { selectedChat, setMessages, setOnlineUsers, setUnreadCounts, setLoadingMessages, setTypingUsers, setLastMessages } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [socketConnected, setSocketConnected] = useState(false);
   const selectedChatRef = useRef(selectedChat);
@@ -18,12 +18,11 @@ const Chat = () => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
 
-  // Memoized fetch function to avoid recreate on every render
+  // Memoized fetch function
   const fetchMessages = useCallback(async (showLoading = true) => {
     if (selectedChatRef.current && currentUser) {
       try {
         if (showLoading) setLoadingMessages(true);
-        console.log('Fetching fresh messages from API for sync...');
         const data = await getMessages(selectedChatRef.current._id, currentUser._id);
         setMessages(data);
       } catch (error) {
@@ -36,48 +35,79 @@ const Chat = () => {
 
   useEffect(() => {
     if (currentUser) {
-      console.log('Initializing socket connection for:', currentUser.username);
-      socket.connect();
-      
-      socket.on('connect', () => {
-        console.log('Socket connected successfully! ID:', socket.id);
+      const onConnect = () => {
         setSocketConnected(true);
         socket.emit('join', currentUser._id);
-      });
-      
-      socket.on('receiveMessage', async (data) => {
-        console.log('--- Socket Message Received ---');
+        console.log('[Socket] Connected and joined as:', currentUser.username);
+      };
+
+      const onReceiveMessage = async (data) => {
         const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
         const selectedId = selectedChatRef.current?._id;
 
-        // If message is for active chat, trigger API reload (background refresh)
+        setLastMessages(prev => ({
+          ...prev,
+          [senderId]: {
+            message: data.message,
+            timestamp: data.timestamp || new Date().toISOString()
+          }
+        }));
+
         if (selectedId && senderId === selectedId) {
-          console.log('Message for active chat received. Reloading via API...');
-          await fetchMessages(false); // Don't show loading for background sync
+          fetchMessages(false);
         } else {
-          console.log('Background message. Incrementing unread count.');
           setUnreadCounts(prev => ({
             ...prev,
             [senderId]: (prev[senderId] || 0) + 1
           }));
         }
-      });
+      };
 
-      socket.on('getOnlineUsers', (users) => {
-        console.log('Online users list updated:', users);
+      // We handle typing indicators in ChatList.jsx and ChatWindow.jsx directly for reliability
+      const onTyping = (data) => {
+        const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
+        setTypingUsers(prev => ({ ...prev, [senderId]: true }));
+        
+        // Auto-clear helper
+        setTimeout(() => {
+          setTypingUsers(prev => ({ ...prev, [senderId]: false }));
+        }, 3000);
+      };
+
+      const onStopTyping = (data) => {
+        const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
+        setTypingUsers(prev => ({ ...prev, [senderId]: false }));
+      };
+
+      const onGetOnlineUsers = (users) => {
+        console.log('[Socket] Online users updated:', users);
         setOnlineUsers(users);
-      });
+      };
+
+      socket.on('connect', onConnect);
+      socket.on('receiveMessage', onReceiveMessage);
+      socket.on('typing', onTyping);
+      socket.on('stopTyping', onStopTyping);
+      socket.on('getOnlineUsers', onGetOnlineUsers);
+
+      // Connect logic
+      if (!socket.connected) {
+        socket.connect();
+      } else {
+        setSocketConnected(true);
+        socket.emit('join', currentUser._id);
+      }
 
       return () => {
-        socket.off('receiveMessage');
-        socket.off('getOnlineUsers');
-        socket.off('connect');
-        socket.disconnect();
+        socket.off('connect', onConnect);
+        socket.off('receiveMessage', onReceiveMessage);
+        socket.off('typing', onTyping);
+        socket.off('stopTyping', onStopTyping);
+        socket.off('getOnlineUsers', onGetOnlineUsers);
       };
     }
-  }, [currentUser, setMessages, setOnlineUsers, setUnreadCounts, fetchMessages]);
+  }, [currentUser, fetchMessages]);
 
-  // Fetch when chat selection changes
   useEffect(() => {
     fetchMessages(true);
   }, [selectedChat, fetchMessages]);

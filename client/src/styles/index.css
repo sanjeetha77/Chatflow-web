@@ -522,3 +522,56 @@ input {
   margin-bottom: 20px;
   font-size: 14px;
 }
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+  animation: slideIn 0.2s ease-out;
+}
+
+/* Status styles */
+.status.typing {
+  font-weight: 600;
+}
+
+.typing-text {
+  color: var(--accent-green) !important;
+  font-weight: 500;
+  font-style: normal;
+}
+
+/* Shared Menu Item Styles */
+.menu-item {
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: var(--bg-active);
+}
+
+.btn-secondary {
+  border: 1px solid var(--accent-green);
+  color: var(--accent-green);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--accent-green);
+  color: white;
+}
