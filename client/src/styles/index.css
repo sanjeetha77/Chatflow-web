@@ -242,11 +242,50 @@ input {
     width: 100%;
     height: 100%;
   }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+.chat-main {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-list-wrapper {
+  height: 100%;
+  display: flex;
+}
+
+.chat-window-wrapper {
+  flex: 1;
+  height: 100%;
+  display: flex;
+}
+
+@media (min-width: 581px) {
+  .chat-list-wrapper {
+    width: 400px;
+    border-right: 1px solid var(--border-color);
+  }
+}
+
+/* Animations */
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 /* Chat List (Contacts) */
 .chatlist-container {
-  width: 400px;
+  width: 100%;
   background-color: var(--bg-main);
   border-right: 1px solid var(--border-color);
   display: flex;

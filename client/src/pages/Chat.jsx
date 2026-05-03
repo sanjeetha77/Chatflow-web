@@ -165,8 +165,12 @@ const Chat = () => {
     <div className="chat-layout">
       <Sidebar />
       <div className="chat-main">
-        <ChatList />
-        <ChatWindow />
+        <div className={`chat-list-wrapper ${selectedChat ? 'mobile-hidden' : ''}`}>
+          <ChatList />
+        </div>
+        <div className={`chat-window-wrapper ${!selectedChat ? 'mobile-hidden' : ''}`}>
+          <ChatWindow />
+        </div>
       </div>
     </div>
   );

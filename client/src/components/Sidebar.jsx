@@ -18,6 +18,7 @@ import { ChatContext } from '../context/ChatContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import Settings from './Settings';
+import NewChatModal from './NewChatModal';
 
 const Sidebar = () => {
   const { logout, currentUser } = useContext(AuthContext);
