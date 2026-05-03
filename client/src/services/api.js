@@ -56,4 +56,20 @@ export const reactToMessage = async (messageId, userId, emoji) => {
     return response.data;
 };
 
+export const uploadFile = async (senderId, receiverId, file, fileType, message = '') => {
+    const formData = new FormData();
+    formData.append('senderId', senderId);
+    formData.append('receiverId', receiverId);
+    formData.append('file', file);
+    formData.append('fileType', fileType);
+    formData.append('message', message);
+
+    const response = await api.post('/messages/upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
 export default api;

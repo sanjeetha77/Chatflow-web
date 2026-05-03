@@ -1,0 +1,134 @@
+.file-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(11, 20, 26, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.file-preview-container {
+  width: 100%;
+  max-width: 800px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0b141a;
+  border-radius: 4px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+.file-preview-header {
+  height: 60px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: #d1d7db;
+  font-size: 16px;
+}
+
+.file-preview-header .close-btn {
+  background: none;
+  border: none;
+  color: #8696a0;
+  cursor: pointer;
+}
+
+.file-preview-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+  background-color: #0b141a;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.doc-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  color: #d1d7db;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.file-size {
+  font-size: 13px;
+  color: #8696a0;
+}
+
+.file-preview-footer {
+  padding: 24px 32px;
+  background-color: #111b21;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.caption-input-container {
+  flex: 1;
+  background-color: #2a3942;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.caption-input-container input {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  color: #d1d7db;
+  font-size: 15px;
+}
+
+.send-file-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.send-file-btn:hover {
+  transform: scale(1.1);
+}
+
+.send-icon-circle {
+  width: 52px;
+  height: 52px;
+  background-color: #00a884;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 168, 132, 0.4);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

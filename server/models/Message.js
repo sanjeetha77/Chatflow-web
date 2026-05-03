@@ -13,7 +13,20 @@ const messageSchema = new mongoose.Schema({
     },
     message: {
         type: String,
-        required: true
+        required: function() { return !this.fileUrl; }
+    },
+    fileUrl: {
+        type: String,
+        default: null
+    },
+    fileName: {
+        type: String,
+        default: null
+    },
+    fileType: {
+        type: String,
+        enum: ['image', 'video', 'doc', 'audio', null],
+        default: null
     },
     timestamp: {
         type: Date,

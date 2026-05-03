@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Search, MoreVertical, Phone, Video, Trash2, XCircle, Star, Loader2, ChevronDown, Reply, Pin, X, Forward, Info, BellOff, Clock, List, LogOut, ShieldAlert, Ban, LayoutGrid } from 'lucide-react';
+import { Search, MoreVertical, Phone, Video, Trash2, XCircle, Star, Loader2, ChevronDown, Reply, Pin, X, Forward, Info, BellOff, Clock, List, LogOut, ShieldAlert, Ban, LayoutGrid, FileText, UserPlus, Sparkles } from 'lucide-react';
 import { ChatContext } from '../context/ChatContext';
 import MessageBubble from './MessageBubble';
 import InputBar from './InputBar';
 import ForwardModal from './ForwardModal';
+import DeleteModal from './DeleteModal';
 import { sendMessage, clearChatMessages, getUsers, deleteMessage } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { socket } from '../socket/socket';
 
 const ChatWindow = () => {
   const { 
-    selectedChat, messages, setMessages, onlineUsers, favourites, 
+    selectedChat, setSelectedChat, messages, setMessages, onlineUsers, favourites, 
     toggleFavourite, loadingMessages, typingUsers, setTypingUsers, 
     setLastMessages, replyMessage, setReplyMessage, pinnedMessage, 
     setPinnedMessage, isSelectMode, setIsSelectMode, selectedMessages, 
@@ -26,6 +27,7 @@ const ChatWindow = () => {
   const [toast, setToast] = useState(null); // { message, type }
   const [showSearch, setShowSearch] = useState(false);
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   const scrollRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -153,16 +155,15 @@ const ChatWindow = () => {
   };
 
   const handleBatchDelete = async () => {
-    if (window.confirm(`Delete ${selectedMessages.length} messages?`)) {
-        try {
-            await Promise.all(selectedMessages.map(id => deleteMessage(id)));
-            setMessages(prev => prev.filter(m => !selectedMessages.includes(m._id)));
-            setIsSelectMode(false);
-            setSelectedMessages([]);
-        } catch (err) {
-            console.error('Batch delete failed:', err);
-        }
-    }
+      try {
+          await Promise.all(selectedMessages.map(id => deleteMessage(id)));
+          setMessages(prev => prev.filter(m => !selectedMessages.includes(m._id)));
+          setIsSelectMode(false);
+          setSelectedMessages([]);
+          setShowDeleteModal(false);
+      } catch (err) {
+          console.error('Batch delete failed:', err);
+      }
   };
 
   const formatSeparatorDate = (timestamp) => {
@@ -193,9 +194,9 @@ const ChatWindow = () => {
     return (
       <div className="chatwindow-empty">
         <div className="empty-state-content">
-          <div style={{fontSize: '100px', marginBottom: '20px', opacity: 0.1}}>💬</div>
-          <h2>Select a chat</h2>
-          <p>Choose a contact from the sidebar to start messaging.<br/>Your end-to-end encrypted messages will appear here.</p>
+          <div className="empty-state-message-main">
+            <h2>Select a contact to start chatting 💬</h2>
+          </div>
         </div>
       </div>
     );
@@ -204,25 +205,6 @@ const ChatWindow = () => {
   return (
     <div className="chatwindow-container" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
       <div className="chat-window-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-        {/* Select Mode Bar */}
-        {isSelectMode && (
-          <div className="select-mode-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <X className="icon" onClick={() => {
-                      setIsSelectMode(false);
-                      setSelectedMessages([]);
-                  }} />
-                  <span>{selectedMessages.length} selected</span>
-              </div>
-              <div className="select-actions">
-                  <Trash2 className="icon" onClick={handleBatchDelete} />
-                  <Forward className="icon" onClick={() => {
-                      // Logic to forward multiple would go here
-                      alert('Batch forwarding coming soon!');
-                  }} />
-              </div>
-          </div>
-        )}
 
         <div className="chatwindow-header">
           <div className="chatwindow-header-left">
@@ -252,12 +234,6 @@ const ChatWindow = () => {
                 <div className="menu-item" onClick={() => { setIsSelectMode(true); setShowMenu(false); }}>
                    <LayoutGrid size={18} /><span>Select messages</span>
                 </div>
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
-                  <BellOff size={18} /><span>Mute notifications</span>
-                </div>
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
-                  <Clock size={18} /><span>Disappearing messages</span>
-                </div>
                 <div className="menu-item" onClick={() => { toggleFavourite(selectedChat._id); setShowMenu(false); }}>
                   {favourites.includes(selectedChat._id) ? (
                     <><XCircle size={18} color="#ff4b4b" /><span style={{color: '#ff4b4b'}}>Remove from favourites</span></>
@@ -265,31 +241,29 @@ const ChatWindow = () => {
                     <><Star size={18} /><span>Add to favourites</span></>
                   )}
                 </div>
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
-                  <List size={18} /><span>Add to list</span>
-                </div>
                 <div className="menu-item" onClick={() => { setSelectedChat(null); setShowMenu(false); }}>
                   <LogOut size={18} /><span>Close chat</span>
                 </div>
                 
                 <div className="menu-separator"></div>
                 
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
-                  <ShieldAlert size={18} /><span>Report</span>
-                </div>
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
-                  <Ban size={18} /><span>Block</span>
-                </div>
                 <div className="menu-item" onClick={async () => {
                     if (window.confirm('Clear chat?')) {
                         await clearChatMessages(selectedChat._id, currentUser._id);
                         setMessages([]);
+                        setToast('Chat cleared');
                         setShowMenu(false);
                     }
                 }}>
                   <Trash2 size={18} /><span>Clear chat</span>
                 </div>
-                <div className="menu-item" onClick={() => setShowMenu(false)} style={{ color: '#ff4b4b' }}>
+                <div className="menu-item" onClick={() => {
+                   if (window.confirm('Delete this chat?')) {
+                       setSelectedChat(null);
+                       setToast('Chat deleted');
+                       setShowMenu(false);
+                   }
+                }} style={{ color: '#ff4b4b' }}>
                   <Trash2 size={18} /><span>Delete chat</span>
                 </div>
               </div>
@@ -366,7 +340,23 @@ const ChatWindow = () => {
           </div>
         )}
 
-        <InputBar onSendMessage={handleSendMessage} disabled={false} />
+        {/* Bottom Bar: Selection Actions or Input Bar */}
+        {isSelectMode ? (
+          <div className="select-mode-bottom-bar">
+            <div className="select-info">
+              <X className="icon" onClick={() => {
+                  setIsSelectMode(false);
+                  setSelectedMessages([]);
+              }} />
+              <span>{selectedMessages.length} selected</span>
+            </div>
+            <div className="select-actions">
+              <Trash2 className="icon" onClick={() => setShowDeleteModal(true)} />
+            </div>
+          </div>
+        ) : (
+          <InputBar onSendMessage={handleSendMessage} disabled={false} />
+        )}
 
         {/* Modals */}
         {showForwardModal && (
@@ -377,6 +367,13 @@ const ChatWindow = () => {
             onForwarded={(count) => showToast(count)}
           />
         )}
+
+        <DeleteModal 
+          isOpen={showDeleteModal}
+          title={`Delete ${selectedMessages.length} message${selectedMessages.length > 1 ? 's' : ''}?`}
+          onCancel={() => setShowDeleteModal(false)}
+          onDeleteForMe={handleBatchDelete}
+        />
       </div>
 
       {/* Message Search Side Panel */}

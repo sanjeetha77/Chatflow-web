@@ -1,12 +1,16 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { 
   Check, CheckCheck, Clock, ChevronDown, Copy, Forward, Trash2, Smile, 
-  CornerUpLeft, Pin, Star, LayoutGrid, Info, HelpCircle, Star as StarFilled
+  CornerUpLeft, Pin, Star, LayoutGrid, Info, HelpCircle, Star as StarFilled,
+  FileText, Download
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { ChatContext } from '../context/ChatContext';
 import EmojiPicker from 'emoji-picker-react';
 import { deleteMessage, toggleStar, togglePin, reactToMessage } from '../services/api';
+import DeleteModal from './DeleteModal';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 const MessageBubble = ({ message, onForwardClick }) => {
   const { currentUser } = useContext(AuthContext);
@@ -16,6 +20,7 @@ const MessageBubble = ({ message, onForwardClick }) => {
   } = useContext(ChatContext);
   
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [menuPosition, setMenuPosition] = useState('top'); // 'top' or 'bottom'
@@ -69,17 +74,13 @@ const MessageBubble = ({ message, onForwardClick }) => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Delete this message?')) {
-      try {
-        await deleteMessage(message._id);
-        const otherId = isSent ? message.receiverId : message.senderId;
-        // socket.emit('deleteMessage', ...) is handled by backend or should be emitted here
-        setMessages(prev => prev.filter(m => m._id !== message._id));
-      } catch (error) {
-        console.error('Failed to delete message:', error);
-      }
+    try {
+      await deleteMessage(message._id);
+      setMessages(prev => prev.filter(m => m._id !== message._id));
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
     }
-    setShowDropdown(false);
   };
 
   const handleStar = async () => {
@@ -148,6 +149,11 @@ const MessageBubble = ({ message, onForwardClick }) => {
       className={`message-wrapper ${isSent ? 'sent' : 'received'} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
       onClick={isSelectMode ? toggleSelect : undefined}
     >
+      {isSelectMode && (
+        <div className={`message-selection-indicator ${isSelected ? 'checked' : ''}`}>
+           {isSelected && <Check size={12} color="#fff" strokeWidth={4} />}
+        </div>
+      )}
       <div className="message-bubble-container">
         
         {/* External Forward Action Button */}
@@ -196,42 +202,42 @@ const MessageBubble = ({ message, onForwardClick }) => {
             </div>
           )}
 
-          {/* Dropdown Menu - Dynamic Positioning */}
+          {/* Dropdown Menu - High-Fidelity Floating Overlay */}
           {showDropdown && (
-            <div className={`bubble-dropdown ${menuPosition}`} ref={dropdownRef}>
-              <div className="dropdown-item" onClick={() => { setReplyMessage(message); setShowDropdown(false); }}>
-                <CornerUpLeft size={16} />
-                <span>Reply</span>
-              </div>
-              <div className="dropdown-item" onClick={() => {
-                navigator.clipboard.writeText(message.message);
-                setShowDropdown(false);
-              }}>
-                <Copy size={16} />
-                <span>Copy</span>
-              </div>
-              <div className="dropdown-item" onClick={() => { onForwardClick(message); setShowDropdown(false); }}>
-                <Forward size={16} />
-                <span>Forward</span>
-              </div>
-              <div className="dropdown-item" onClick={handleStar}>
-                <Star size={16} />
-                <span>{message.isStarred ? 'Unstar' : 'Star'}</span>
-              </div>
-              <div className="dropdown-item" onClick={handlePin}>
-                <Pin size={16} />
-                <span>{message.isPinned ? 'Unpin' : 'Pin'}</span>
-              </div>
-              <div className="dropdown-item" onClick={toggleSelect}>
-                <LayoutGrid size={16} />
-                <span>Select</span>
-              </div>
-              {isSent && (
-                <div className="dropdown-item danger" onClick={handleDelete}>
+            <div className="bubble-dropdown-container">
+              <div className={`bubble-dropdown ${menuPosition}`} ref={dropdownRef}>
+                <div className="dropdown-item" onClick={() => { setReplyMessage(message); setShowDropdown(false); }}>
+                  <CornerUpLeft size={16} />
+                  <span>Reply</span>
+                </div>
+                <div className="dropdown-item" onClick={() => {
+                  navigator.clipboard.writeText(message.message);
+                  setShowDropdown(false);
+                }}>
+                  <Copy size={16} />
+                  <span>Copy</span>
+                </div>
+                <div className="dropdown-item" onClick={() => { onForwardClick(message); setShowDropdown(false); }}>
+                  <Forward size={16} />
+                  <span>Forward</span>
+                </div>
+                <div className="dropdown-item" onClick={handleStar}>
+                  <Star size={16} />
+                  <span>{message.isStarred ? 'Unstar' : 'Star'}</span>
+                </div>
+                <div className="dropdown-item" onClick={handlePin}>
+                  <Pin size={16} />
+                  <span>{message.isPinned ? 'Unpin' : 'Pin'}</span>
+                </div>
+                <div className="dropdown-item" onClick={toggleSelect}>
+                  <LayoutGrid size={16} />
+                  <span>Select</span>
+                </div>
+                <div className="dropdown-item danger" onClick={() => { setShowDeleteModal(true); setShowDropdown(false); }}>
                   <Trash2 size={16} />
                   <span>Delete</span>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -271,7 +277,34 @@ const MessageBubble = ({ message, onForwardClick }) => {
             </div>
           )}
 
-          <div className="message-text" id={`msg-${message._id}`}>{message.message}</div>
+          {message.fileUrl && (
+            <div className={`message-media-container ${message.fileType}`}>
+              {message.fileType === 'image' ? (
+                <div className="image-attachment">
+                  <img 
+                    src={`${API_BASE_URL}${message.fileUrl}`} 
+                    alt={message.fileName} 
+                    onClick={() => window.open(`${API_BASE_URL}${message.fileUrl}`, '_blank')}
+                  />
+                </div>
+              ) : (
+                <div className="file-attachment" onClick={() => window.open(`${API_BASE_URL}${message.fileUrl}`, '_blank')}>
+                  <div className="file-icon-box">
+                    <FileText size={24} color="#fff" />
+                  </div>
+                  <div className="file-details">
+                    <div className="file-name">{message.fileName}</div>
+                    <div className="file-meta">{(message.fileSize || 'FILE').toUpperCase()}</div>
+                  </div>
+                  <div className="file-download-icon">
+                    <Download size={20} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {message.message && <div className="message-text" id={`msg-${message._id}`}>{message.message}</div>}
           
           {/* Reaction Badge (Bottom Right overlapping bubble) */}
           {message.reactions && Object.keys(message.reactions).length > 0 && (
@@ -302,6 +335,14 @@ const MessageBubble = ({ message, onForwardClick }) => {
           </div>
         </div>
       </div>
+      
+      <DeleteModal 
+        isOpen={showDeleteModal}
+        title="Delete message?"
+        onCancel={() => setShowDeleteModal(false)}
+        onDeleteForMe={handleDelete}
+        onDeleteForEveryone={isSent ? handleDelete : null}
+      />
     </div>
   );
 };

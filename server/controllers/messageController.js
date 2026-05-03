@@ -167,6 +167,32 @@ const reactToMessage = async (req, res) => {
     }
 };
 
+// @desc    Upload a file and create a message
+// @route   POST /api/messages/upload
+const uploadFile = async (req, res) => {
+    const { senderId, receiverId, message, fileType } = req.body;
+    const file = req.file;
+
+    if (!file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    try {
+        const newMessage = await Message.create({
+            senderId,
+            receiverId,
+            message: message || '', // Caption
+            fileUrl: `/uploads/${file.filename}`,
+            fileName: file.originalname,
+            fileType: fileType // 'image', 'video', 'doc', etc.
+        });
+
+        res.status(201).json(newMessage);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     sendMessage, 
     getMessages, 
@@ -175,5 +201,6 @@ module.exports = {
     forwardMessage, 
     toggleStar, 
     togglePin,
-    reactToMessage
+    reactToMessage,
+    uploadFile
 };
