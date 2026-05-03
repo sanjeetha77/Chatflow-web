@@ -32,12 +32,14 @@ const {
     toggleStar, 
     togglePin,
     reactToMessage,
-    uploadFile
+    uploadFile,
+    editMessage
 } = require('../controllers/messageController');
 
 router.post('/', sendMessage);
 router.post('/upload', upload.single('file'), uploadFile);
 router.post('/forward', forwardMessage);
+router.patch('/:messageId', editMessage);
 router.get('/:userId', getMessages);
 router.delete('/:userId', clearMessages);
 router.delete('/single/:messageId', deleteMessage);

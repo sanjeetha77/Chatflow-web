@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
+    bio: {
+        type: String,
+        default: 'Available'
+    },
+    profilePic: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

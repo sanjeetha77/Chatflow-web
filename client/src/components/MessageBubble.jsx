@@ -2,7 +2,7 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { 
   Check, CheckCheck, Clock, ChevronDown, Copy, Forward, Trash2, Smile, 
   CornerUpLeft, Pin, Star, LayoutGrid, Info, HelpCircle, Star as StarFilled,
-  FileText, Download
+  FileText, Download, Play, Pause, Edit3
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { ChatContext } from '../context/ChatContext';
@@ -12,11 +12,70 @@ import DeleteModal from './DeleteModal';
 
 const API_BASE_URL = 'http://localhost:5000';
 
-const MessageBubble = ({ message, onForwardClick }) => {
+const AudioPlayer = ({ src }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef(null);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const onTimeUpdate = () => {
+    setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const onLoadedMetadata = () => {
+    setDuration(audioRef.current.duration);
+  };
+
+  const formatTime = (time) => {
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="audio-player">
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        onTimeUpdate={onTimeUpdate} 
+        onLoadedMetadata={onLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+      />
+      <button className="play-btn" onClick={togglePlay}>
+        {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+      </button>
+      <div className="audio-controls">
+        <input 
+          type="range" 
+          min="0" 
+          max={duration || 0} 
+          value={currentTime} 
+          onChange={(e) => {
+            audioRef.current.currentTime = e.target.value;
+            setCurrentTime(e.target.value);
+          }}
+          className="audio-slider"
+        />
+        <span className="audio-time">{formatTime(currentTime)} / {formatTime(duration)}</span>
+      </div>
+    </div>
+  );
+};
+
+const MessageBubble = ({ message, onForwardClick, isHighlighted }) => {
   const { currentUser } = useContext(AuthContext);
   const { 
     setMessages, setReplyMessage, setIsSelectMode, isSelectMode,
-    selectedMessages, setSelectedMessages, setPinnedMessage 
+    selectedMessages, setSelectedMessages, setPinnedMessage, setEditingMessage
   } = useContext(ChatContext);
   
   const [showDropdown, setShowDropdown] = useState(false);
@@ -146,7 +205,8 @@ const MessageBubble = ({ message, onForwardClick }) => {
 
   return (
     <div 
-      className={`message-wrapper ${isSent ? 'sent' : 'received'} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+      id={`msg-${message._id}`}
+      className={`message-wrapper ${isSent ? 'sent' : 'received'} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={isSelectMode ? toggleSelect : undefined}
     >
       {isSelectMode && (
@@ -217,6 +277,12 @@ const MessageBubble = ({ message, onForwardClick }) => {
                   <Copy size={16} />
                   <span>Copy</span>
                 </div>
+                {isSent && message.message && !message.fileUrl && (
+                  <div className="dropdown-item" onClick={() => { setEditingMessage(message); setShowDropdown(false); }}>
+                    <Edit3 size={16} />
+                    <span>Edit</span>
+                  </div>
+                )}
                 <div className="dropdown-item" onClick={() => { onForwardClick(message); setShowDropdown(false); }}>
                   <Forward size={16} />
                   <span>Forward</span>
@@ -287,9 +353,11 @@ const MessageBubble = ({ message, onForwardClick }) => {
                     onClick={() => window.open(`${API_BASE_URL}${message.fileUrl}`, '_blank')}
                   />
                 </div>
+              ) : message.fileType === 'audio' ? (
+                <AudioPlayer src={`${API_BASE_URL}${message.fileUrl}`} />
               ) : (
                 <div className="file-attachment" onClick={() => window.open(`${API_BASE_URL}${message.fileUrl}`, '_blank')}>
-                  <div className="file-icon-box">
+                  <div className={`file-icon-box ${message.fileName?.split('.').pop()?.toLowerCase()}`}>
                     <FileText size={24} color="#fff" />
                   </div>
                   <div className="file-details">
@@ -319,6 +387,7 @@ const MessageBubble = ({ message, onForwardClick }) => {
           )}
 
           <div className="message-time">
+            {message.isEdited && <span className="edited-label" style={{ marginRight: '4px', fontStyle: 'italic', fontSize: '11px', opacity: 0.7 }}>edited</span>}
             {message.isStarred && <StarFilled size={10} style={{ marginRight: '4px', color: 'var(--text-secondary)' }} />}
             {formatTime(message.timestamp)}
             {isSent && (

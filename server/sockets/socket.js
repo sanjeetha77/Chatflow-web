@@ -87,6 +87,11 @@ const socketIO = (server) => {
             });
         });
 
+        socket.on('updateProfile', (data) => {
+            // Broadcast to everyone so their allUsers state updates
+            io.emit('profileUpdated', data);
+        });
+
         socket.on('disconnecting', () => {
             const rooms = Array.from(socket.rooms);
             rooms.forEach(userId => {

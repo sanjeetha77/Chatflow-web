@@ -47,4 +47,24 @@ const createUser = async (req, res) => {
     }
 };
 
-module.exports = { getUsers, createUser };
+// @desc    Update a user
+// @route   PUT /api/users/:id
+const updateUser = async (req, res) => {
+    const { id } = req.params;
+    const { username, email, bio, profilePic } = req.body;
+    try {
+        const user = await User.findByIdAndUpdate(
+            id, 
+            { username, email, bio, profilePic },
+            { new: true, runValidators: true }
+        );
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+module.exports = { getUsers, createUser, updateUser };

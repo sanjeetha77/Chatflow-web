@@ -28,6 +28,11 @@ const ChatWindow = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showClearChatModal, setShowClearChatModal] = useState(false);
+  const [showDeleteChatModal, setShowDeleteChatModal] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [droppedFile, setDroppedFile] = useState(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   
   const scrollRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -97,6 +102,29 @@ const ChatWindow = () => {
       scrollToBottom('auto');
     }
   }, [selectedChat]);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      setDroppedFile(files[0]);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -204,7 +232,22 @@ const ChatWindow = () => {
 
   return (
     <div className="chatwindow-container" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-      <div className="chat-window-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <div 
+        className="chat-window-main" 
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {isDragging && (
+          <div className="drag-drop-overlay" onDragLeave={handleDragLeave}>
+            <div className="overlay-content">
+              <div className="overlay-icon">
+                <FileText size={48} />
+              </div>
+              <p>Drop files here to upload</p>
+            </div>
+          </div>
+        )}
 
         <div className="chatwindow-header">
           <div className="chatwindow-header-left">
@@ -247,23 +290,10 @@ const ChatWindow = () => {
                 
                 <div className="menu-separator"></div>
                 
-                <div className="menu-item" onClick={async () => {
-                    if (window.confirm('Clear chat?')) {
-                        await clearChatMessages(selectedChat._id, currentUser._id);
-                        setMessages([]);
-                        setToast('Chat cleared');
-                        setShowMenu(false);
-                    }
-                }}>
+                <div className="menu-item" onClick={() => { setShowClearChatModal(true); setShowMenu(false); }}>
                   <Trash2 size={18} /><span>Clear chat</span>
                 </div>
-                <div className="menu-item" onClick={() => {
-                   if (window.confirm('Delete this chat?')) {
-                       setSelectedChat(null);
-                       setToast('Chat deleted');
-                       setShowMenu(false);
-                   }
-                }} style={{ color: '#ff4b4b' }}>
+                <div className="menu-item" onClick={() => { setShowDeleteChatModal(true); setShowMenu(false); }} style={{ color: '#ff4b4b' }}>
                   <Trash2 size={18} /><span>Delete chat</span>
                 </div>
               </div>
@@ -318,7 +348,14 @@ const ChatWindow = () => {
               const prevMsg = messages[index - 1];
               const prevDateStr = prevMsg ? formatSeparatorDate(prevMsg.timestamp) : null;
               if (dateStr !== prevDateStr) acc.push(<div key={`sep-${index}`} className="date-separator animate-fade-in"><span>{dateStr}</span></div>);
-              acc.push(<MessageBubble key={msg._id || index} message={msg} onForwardClick={handleForwardClick} />);
+              acc.push(
+                <MessageBubble 
+                  key={msg._id || index} 
+                  message={msg} 
+                  onForwardClick={handleForwardClick} 
+                  isHighlighted={msg._id === highlightedMessageId}
+                />
+              );
               return acc;
             }, [])
           )}
@@ -355,7 +392,12 @@ const ChatWindow = () => {
             </div>
           </div>
         ) : (
-          <InputBar onSendMessage={handleSendMessage} disabled={false} />
+          <InputBar 
+            onSendMessage={handleSendMessage} 
+            disabled={!selectedChat} 
+            droppedFile={droppedFile}
+            onClearDroppedFile={() => setDroppedFile(null)}
+          />
         )}
 
         {/* Modals */}
@@ -373,6 +415,40 @@ const ChatWindow = () => {
           title={`Delete ${selectedMessages.length} message${selectedMessages.length > 1 ? 's' : ''}?`}
           onCancel={() => setShowDeleteModal(false)}
           onDeleteForMe={handleBatchDelete}
+        />
+
+        <DeleteModal 
+          isOpen={showClearChatModal}
+          title="Clear this chat?"
+          onCancel={() => setShowClearChatModal(false)}
+          onDeleteForMe={async () => {
+              await clearChatMessages(selectedChat._id, currentUser._id);
+              setMessages([]);
+              setToast('Chat cleared');
+              setShowClearChatModal(false);
+          }}
+          onDeleteForEveryone={async () => {
+              await clearChatMessages(selectedChat._id, currentUser._id);
+              setMessages([]);
+              setToast('Chat cleared for everyone');
+              setShowClearChatModal(false);
+          }}
+        />
+
+        <DeleteModal 
+          isOpen={showDeleteChatModal}
+          title="Delete this chat?"
+          onCancel={() => setShowDeleteChatModal(false)}
+          onDeleteForMe={() => {
+              setSelectedChat(null);
+              setToast('Chat deleted');
+              setShowDeleteChatModal(false);
+          }}
+          onDeleteForEveryone={() => {
+              setSelectedChat(null);
+              setToast('Chat deleted for everyone');
+              setShowDeleteChatModal(false);
+          }}
         />
       </div>
 
@@ -418,7 +494,11 @@ const ChatWindow = () => {
                     className="search-result-item"
                     onClick={() => {
                       const element = document.getElementById(`msg-${msg._id}`);
-                      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setHighlightedMessageId(msg._id);
+                        setTimeout(() => setHighlightedMessageId(null), 3000);
+                      }
                     }}
                   >
                     <div className="result-date">{formatSearchResultDate(msg.timestamp)}</div>
@@ -436,6 +516,49 @@ const ChatWindow = () => {
           {toast}
         </div>
       )}
+
+      {/* High-Fidelity Deletion Modals */}
+      <DeleteModal 
+        isOpen={showDeleteModal}
+        title={`Delete ${selectedMessages.length} messages?`}
+        onCancel={() => { setShowDeleteModal(false); setIsSelectMode(false); setSelectedMessages([]); }}
+        onDeleteForMe={() => handleBatchDelete(false)}
+        onDeleteForEveryone={() => handleBatchDelete(true)}
+      />
+
+      <DeleteModal 
+        isOpen={showClearChatModal}
+        title="Clear this chat?"
+        onCancel={() => setShowClearChatModal(false)}
+        onDeleteForMe={async () => {
+            await clearChatMessages(selectedChat._id, currentUser._id);
+            setMessages([]);
+            setToast('Chat cleared');
+            setShowClearChatModal(false);
+        }}
+        onDeleteForEveryone={async () => {
+            await clearChatMessages(selectedChat._id, currentUser._id); // In real app, this would be global
+            setMessages([]);
+            setToast('Chat cleared for everyone');
+            setShowClearChatModal(false);
+        }}
+      />
+
+      <DeleteModal 
+        isOpen={showDeleteChatModal}
+        title="Delete this chat?"
+        onCancel={() => setShowDeleteChatModal(false)}
+        onDeleteForMe={() => {
+            setSelectedChat(null);
+            setToast('Chat deleted');
+            setShowDeleteChatModal(false);
+        }}
+        onDeleteForEveryone={() => {
+            setSelectedChat(null);
+            setToast('Chat deleted for everyone');
+            setShowDeleteChatModal(false);
+        }}
+      />
     </div>
   );
 };

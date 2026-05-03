@@ -193,6 +193,23 @@ const uploadFile = async (req, res) => {
     }
 };
 
+// @desc    Edit a message
+// @route   PATCH /api/messages/:messageId
+const editMessage = async (req, res) => {
+    const { messageId } = req.params;
+    const { message } = req.body;
+    try {
+        const updatedMessage = await Message.findByIdAndUpdate(
+            messageId, 
+            { message, isEdited: true }, 
+            { new: true }
+        ).populate('replyTo');
+        res.status(200).json(updatedMessage);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     sendMessage, 
     getMessages, 
@@ -200,7 +217,8 @@ module.exports = {
     deleteMessage, 
     forwardMessage, 
     toggleStar, 
-    togglePin,
-    reactToMessage,
-    uploadFile
+    togglePin, 
+    reactToMessage, 
+    uploadFile, 
+    editMessage 
 };

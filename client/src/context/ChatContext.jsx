@@ -31,6 +31,8 @@ export const ChatProvider = ({ children }) => {
     const [pinnedMessage, setPinnedMessage] = useState(null);
     const [selectedMessages, setSelectedMessages] = useState([]);
     const [isSelectMode, setIsSelectMode] = useState(false);
+    const [editingMessage, setEditingMessage] = useState(null);
+    const [allUsers, setAllUsers] = useState([]);
 
     return (
         <ChatContext.Provider value={{ 
@@ -57,7 +59,11 @@ export const ChatProvider = ({ children }) => {
             selectedMessages,
             setSelectedMessages,
             isSelectMode,
-            setIsSelectMode
+            setIsSelectMode,
+            editingMessage,
+            setEditingMessage,
+            allUsers,
+            setAllUsers
         }}>
             {children}
         </ChatContext.Provider>

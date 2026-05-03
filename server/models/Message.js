@@ -58,6 +58,10 @@ const messageSchema = new mongoose.Schema({
         type: Map,
         of: String,
         default: {}
+    },
+    isEdited: {
+        type: Boolean,
+        default: false
     }
 });
 

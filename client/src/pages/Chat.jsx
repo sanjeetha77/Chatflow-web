@@ -42,52 +42,56 @@ const Chat = () => {
       };
 
       const onReceiveMessage = async (data) => {
-        const senderId = typeof data.senderId === 'object' ? data.senderId._id : data.senderId;
-        const selectedId = selectedChatRef.current?._id;
-        const messageId = data._id || data.id;
+        const senderId = String(typeof data.senderId === 'object' ? data.senderId._id : data.senderId);
+        const selectedId = selectedChatRef.current ? String(selectedChatRef.current._id) : null;
+        const messageId = String(data._id || data.id);
 
         // EXPLICIT FIX: Only emit if we are NOT the sender
-        if (messageId && String(senderId) !== String(currentUser._id)) {
+        if (messageId && senderId !== String(currentUser._id)) {
           console.log('[Chat.jsx] Emitting delivery confirmation to original sender:', senderId);
           socket.emit('messageDelivered', {
-            messageId: String(messageId),
-            senderId: String(senderId), // The person who sent it (Jack)
-            receiverId: String(currentUser._id) // Us (Julie)
+            messageId: messageId,
+            senderId: senderId,
+            receiverId: String(currentUser._id)
           });
 
-          // NEW: If we are currently looking at this chat, also mark it as SEEN instantly
-          if (selectedId && String(senderId) === String(selectedId)) {
+          // If we are currently looking at this chat, also mark it as SEEN instantly
+          if (selectedId && senderId === selectedId) {
             socket.emit('markSeen', {
-              senderId: String(senderId),
+              senderId: senderId,
               receiverId: String(currentUser._id)
             });
           }
         }
 
+        // 1. Update the sidebar preview for everyone involved
+        const previewId = senderId === String(currentUser._id) ? String(data.receiverId) : senderId;
         setLastMessages(prev => ({
           ...prev,
-          [senderId]: {
+          [previewId]: {
             message: data.message,
             timestamp: data.timestamp || new Date().toISOString()
           }
         }));
 
-        // UPDATE LOCALLY instead of re-fetching everything (fixes race condition)
-        if (selectedId && String(senderId) === String(selectedId)) {
-          const newMessage = {
-            ...data,
-            _id: messageId,
-            status: 'seen'
-          };
-          setMessages(prev => {
-            if (prev.some(m => m._id === messageId)) return prev;
-            return [...prev, newMessage];
-          });
-        } else {
-          setUnreadCounts(prev => ({
-            ...prev,
-            [senderId]: (prev[senderId] || 0) + 1
-          }));
+        // 2. Only handle unread counts and message addition if we are the RECEIVER
+        if (senderId !== String(currentUser._id)) {
+          if (selectedId && senderId === selectedId) {
+            const newMessage = {
+              ...data,
+              _id: messageId,
+              status: 'seen'
+            };
+            setMessages(prev => {
+              if (prev.some(m => String(m._id) === messageId)) return prev;
+              return [...prev, newMessage];
+            });
+          } else {
+            setUnreadCounts(prev => ({
+              ...prev,
+              [senderId]: (prev[senderId] || 0) + 1
+            }));
+          }
         }
       };
 

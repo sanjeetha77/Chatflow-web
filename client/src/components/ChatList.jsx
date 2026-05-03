@@ -13,20 +13,19 @@ const ChatList = () => {
   const [error, setError] = useState('');
   
   const { currentUser } = useContext(AuthContext);
-  const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, favourites, onlineUsers, typingUsers, lastMessages, setLastMessages } = useContext(ChatContext);
+  const { 
+    selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, 
+    favourites, onlineUsers, typingUsers, lastMessages, setLastMessages,
+    setAllUsers 
+  } = useContext(ChatContext);
 
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
-    }
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formatTime = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    }).toLowerCase();
   };
 
   const fetchUsers = async () => {
@@ -35,6 +34,7 @@ const ChatList = () => {
       const data = await getUsers(currentUser._id);
       const otherUsers = data.filter(u => u._id.toString() !== currentUser._id.toString());
       setUsers(otherUsers);
+      setAllUsers(otherUsers);
       
       // Initialize lastMessages from backend data
       const initialLastMessages = {};
@@ -69,9 +69,21 @@ const ChatList = () => {
       fetchUsers();
     });
 
+    socket.on('profileUpdated', (data) => {
+        const { userId, username, bio, profilePic } = data;
+        setUsers(prev => prev.map(u => String(u._id) === String(userId) ? { ...u, username, bio, profilePic } : u));
+        setAllUsers(prev => prev.map(u => String(u._id) === String(userId) ? { ...u, username, bio, profilePic } : u));
+        
+        // If the selected chat is the one updated, update it too
+        if (selectedChat && selectedChat._id === userId) {
+            setSelectedChat(prev => ({ ...prev, username, bio, profilePic }));
+        }
+    });
+
     return () => {
       socket.off('userJoined');
       socket.off('receiveMessage');
+      socket.off('profileUpdated');
     };
   }, [currentUser]);
 
@@ -168,7 +180,11 @@ const ChatList = () => {
               >
                 <div className="avatar-wrapper" style={{ position: 'relative' }}>
                   <div className="avatar">
-                    {user.username.charAt(0).toUpperCase()}
+                    {user.profilePic ? (
+                      <img src={user.profilePic} alt={user.username} className="avatar-img" />
+                    ) : (
+                      user.username.charAt(0).toUpperCase()
+                    )}
                   </div>
                   {onlineUsers.some(id => id.toString() === user._id.toString()) && (
                     <div className="online-dot" style={{

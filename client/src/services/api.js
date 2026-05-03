@@ -16,6 +16,11 @@ export const getUsers = async () => {
     return response.data;
 };
 
+export const updateUser = async (userId, data) => {
+    const response = await api.put(`/users/${userId}`, data);
+    return response.data;
+};
+
 export const getMessages = async (userId, currentUserId) => {
     const response = await api.get(`/messages/${userId}?currentUserId=${currentUserId}`);
     return response.data;
@@ -23,6 +28,11 @@ export const getMessages = async (userId, currentUserId) => {
 
 export const sendMessage = async (senderId, receiverId, message, replyTo = null) => {
     const response = await api.post('/messages', { senderId, receiverId, message, replyTo });
+    return response.data;
+};
+
+export const editMessage = async (messageId, message) => {
+    const response = await api.patch(`/messages/${messageId}`, { message });
     return response.data;
 };
 

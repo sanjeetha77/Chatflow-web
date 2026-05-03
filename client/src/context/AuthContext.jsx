@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { updateUser as updateApi } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -22,8 +23,20 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('chatflow_user');
     };
 
+    const updateUserProfile = async (data) => {
+        try {
+            const updatedUser = await updateApi(currentUser._id, data);
+            setCurrentUser(updatedUser);
+            localStorage.setItem('chatflow_user', JSON.stringify(updatedUser));
+            return updatedUser;
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ currentUser, login, logout }}>
+        <AuthContext.Provider value={{ currentUser, login, logout, updateUserProfile }}>
             {children}
         </AuthContext.Provider>
     );
