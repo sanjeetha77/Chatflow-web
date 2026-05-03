@@ -10,56 +10,52 @@ const InputBar = ({ onSendMessage, disabled }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const textareaRef = useRef(null);
   
   const { currentUser } = useContext(AuthContext);
   const { selectedChat } = useContext(ChatContext);
 
-  // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
         setShowEmojiPicker(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    if (showEmojiPicker) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showEmojiPicker]);
 
   const handleTyping = () => {
     if (!selectedChat || !currentUser) return;
-
-    console.log(`[Client] Emitting typing: ${currentUser._id} -> ${selectedChat._id}`);
-    // Emit typing event
-    socket.emit('typing', {
-      senderId: currentUser._id,
-      receiverId: selectedChat._id
-    });
-
-    // Clear previous timeout
+    socket.emit('typing', { senderId: currentUser._id, receiverId: selectedChat._id });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-    // Set new timeout to stop typing after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', {
-        senderId: currentUser._id,
-        receiverId: selectedChat._id
-      });
+      socket.emit('stopTyping', { senderId: currentUser._id, receiverId: selectedChat._id });
     }, 2000);
   };
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     if (message.trim() && !disabled) {
-      // Clear typing indicator immediately on send
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socket.emit('stopTyping', {
-        senderId: currentUser._id,
-        receiverId: selectedChat._id
-      });
-
-      onSendMessage(message.trim());
+      socket.emit('stopTyping', { senderId: currentUser._id, receiverId: selectedChat._id });
+      onSendMessage(message); // Pass full message (CSS handles pre-wrap)
       setMessage('');
       setShowEmojiPicker(false);
+    }
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+    }
+  }, [message]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -69,68 +65,58 @@ const InputBar = ({ onSendMessage, disabled }) => {
   };
 
   return (
-    <div className="input-bar-container" style={{ position: 'relative' }}>
+    <div className="input-bar-wrapper">
       {showEmojiPicker && (
-        <div 
-          ref={emojiPickerRef} 
-          style={{ 
-            position: 'absolute', 
-            bottom: '100%', 
-            left: '10px', 
-            zIndex: 1000,
-            marginBottom: '10px',
-            boxShadow: 'var(--shadow)'
-          }}
-        >
+        <div className="emoji-picker-container" ref={emojiPickerRef}>
           <EmojiPicker 
             onEmojiClick={onEmojiClick} 
             theme="dark" 
-            autoFocusSearch={false}
-            width={350}
-            height={400}
+            width="100%"
+            height={350}
             skinTonesDisabled
             searchPlaceHolder="Search emoji"
           />
         </div>
       )}
 
-      <Smile 
-        size={24} 
-        className={`icon ${showEmojiPicker ? 'active' : ''}`} 
-        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-        style={{ cursor: 'pointer', color: showEmojiPicker ? 'var(--accent-green)' : 'inherit' }}
-      />
-      <Plus size={24} className="icon" style={{ cursor: 'pointer' }} />
-      
-      <form className="input-bar-form" onSubmit={handleSubmit} style={{ flex: 1 }}>
-        <input
-          type="text"
-          placeholder="Type a message"
-          value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
-            handleTyping();
-          }}
-          disabled={disabled}
-          onFocus={() => setShowEmojiPicker(false)}
-        />
-        <button 
-          type="submit" 
-          style={{display: 'none'}}
-          disabled={disabled || !message.trim()}
-        />
-      </form>
+      <div className="input-bar-main">
+        <div className="input-actions-left">
+          <button className="input-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+            <Smile size={24} className={showEmojiPicker ? 'active' : ''} />
+          </button>
+          <button className="input-btn">
+            <Plus size={24} />
+          </button>
+        </div>
+        
+        <div className="input-field-container">
+          <textarea
+            ref={textareaRef}
+            rows="1"
+            placeholder="Type a message"
+            value={message}
+            onKeyDown={handleKeyDown}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              handleTyping();
+            }}
+            disabled={disabled}
+            onFocus={() => setShowEmojiPicker(false)}
+          />
+        </div>
 
-      {message.trim() ? (
-        <Send 
-          size={24} 
-          className="icon" 
-          style={{color: 'var(--accent-green)', cursor: 'pointer'}} 
-          onClick={handleSubmit} 
-        />
-      ) : (
-        <Mic size={24} className="icon" style={{ cursor: 'pointer' }} />
-      )}
+        <div className="input-actions-right">
+          {message.trim() ? (
+            <button className="send-btn" onClick={handleSubmit} disabled={disabled}>
+              <Send size={24} />
+            </button>
+          ) : (
+            <button className="input-btn">
+              <Mic size={24} />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

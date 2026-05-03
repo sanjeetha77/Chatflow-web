@@ -15,13 +15,18 @@ const ChatList = () => {
   const { currentUser } = useContext(AuthContext);
   const { selectedChat, setSelectedChat, unreadCounts, setUnreadCounts, favourites, onlineUsers, typingUsers, lastMessages, setLastMessages } = useContext(ChatContext);
 
-  const formatTime = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    }).toLowerCase();
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+    }
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const fetchUsers = async () => {
@@ -104,7 +109,6 @@ const ChatList = () => {
               className={loading ? 'spin' : ''} 
               onClick={fetchUsers}
             />
-            <Search size={20} style={{cursor: 'pointer'}} />
             <Filter size={20} style={{cursor: 'pointer'}} />
           </div>
         </div>

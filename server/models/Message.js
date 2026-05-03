@@ -18,6 +18,33 @@ const messageSchema = new mongoose.Schema({
     timestamp: {
         type: Date,
         default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ['sent', 'delivered', 'seen'],
+        default: 'sent'
+    },
+    isForwarded: {
+        type: Boolean,
+        default: false
+    },
+    isStarred: {
+        type: Boolean,
+        default: false
+    },
+    isPinned: {
+        type: Boolean,
+        default: false
+    },
+    replyTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+        default: null
+    },
+    reactions: {
+        type: Map,
+        of: String,
+        default: {}
     }
 });
 

@@ -15,10 +15,6 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const { currentUser } = useContext(AuthContext);
 
-  useEffect(() => {
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
-  }, []);
 
   return (
     <Router>

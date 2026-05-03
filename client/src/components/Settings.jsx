@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { X, Moon, Sun, Bell, User, Lock, Info } from 'lucide-react';
+import { ThemeContext } from '../context/ThemeContext';
 
 const Settings = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('profile');
-  const [theme, setTheme] = useState('dark');
+  const { theme, setTheme } = useContext(ThemeContext);
 
   const tabs = [
     { id: 'profile', icon: User, label: 'Profile' },

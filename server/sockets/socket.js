@@ -9,38 +9,29 @@ const socketIO = (server) => {
     let onlineUsers = new Set(); 
 
     io.on('connection', (socket) => {
-        console.log('A user connected:', socket.id);
 
         socket.on('join', (userId) => {
             const uid = String(userId);
             socket.join(uid);
             onlineUsers.add(uid);
             
-            console.log(`[Server] User ${uid} joined. Online users:`, Array.from(onlineUsers));
             io.emit('getOnlineUsers', Array.from(onlineUsers));
         });
 
         socket.on('sendMessage', (data) => {
-            const { senderId, receiverId, message, timestamp } = data;
-            const rid = String(receiverId);
+            const messageId = data._id || data.id;
+            const rid = String(data.receiverId);
+            
             io.to(rid).emit('receiveMessage', {
-                senderId,
-                message,
-                timestamp: timestamp || new Date()
+                ...data,
+                _id: String(messageId)
             });
         });
 
-        // Typing indicators with the specific logs you requested
         socket.on('typing', (data) => {
             const { senderId, receiverId } = data;
             const rid = String(receiverId);
             
-            console.log("Typing event received:", data);
-            
-            // Check if anyone is in that room
-            const room = io.sockets.adapter.rooms.get(rid);
-            console.log(`Receiver room ${rid} members:`, room ? room.size : 0);
-
             // Emit to the receiver's room
             io.to(rid).emit('typing', { senderId });
         });
@@ -49,6 +40,51 @@ const socketIO = (server) => {
             const { senderId, receiverId } = data;
             const rid = String(receiverId);
             io.to(rid).emit('stopTyping', { senderId });
+        });
+
+        socket.on('messageDelivered', async (data) => {
+            const { messageId, senderId, receiverId } = data;
+            
+            try {
+                // Persistent update in DB
+                const Message = require('../models/Message');
+                await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
+                
+                // Notify the original sender
+                io.to(String(senderId)).emit('messageDelivered', { messageId, receiverId });
+            } catch (err) {
+                console.error('Error updating delivery status:', err);
+            }
+        });
+
+        socket.on('markSeen', async (data) => {
+            const { senderId, receiverId } = data;
+            
+            try {
+                const Message = require('../models/Message');
+                // Mark all messages from the other person to US as 'seen'
+                await Message.updateMany(
+                    { senderId, receiverId, status: { $ne: 'seen' } },
+                    { status: 'seen' }
+                );
+                
+                // Notify the other person that their messages were seen
+                io.to(String(senderId)).emit('messagesSeen', { receiverId });
+            } catch (err) {
+                console.error('Error marking messages as seen:', err);
+            }
+        });
+
+        socket.on('deleteMessage', (data) => {
+            const { messageId, receiverId } = data;
+            io.to(String(receiverId)).emit('messageDeleted', { messageId });
+        });
+
+        socket.on('forwardMessage', (data) => {
+            const { forwardedMessages } = data;
+            forwardedMessages.forEach(msg => {
+                io.to(String(msg.receiverId)).emit('receiveMessage', msg);
+            });
         });
 
         socket.on('disconnecting', () => {
@@ -65,7 +101,6 @@ const socketIO = (server) => {
 
         socket.on('disconnect', () => {
             io.emit('getOnlineUsers', Array.from(onlineUsers));
-            console.log('User disconnected:', socket.id);
         });
     });
 

@@ -27,6 +27,11 @@ export const ChatProvider = ({ children }) => {
         );
     };
 
+    const [replyMessage, setReplyMessage] = useState(null);
+    const [pinnedMessage, setPinnedMessage] = useState(null);
+    const [selectedMessages, setSelectedMessages] = useState([]);
+    const [isSelectMode, setIsSelectMode] = useState(false);
+
     return (
         <ChatContext.Provider value={{ 
             selectedChat, 
@@ -44,7 +49,15 @@ export const ChatProvider = ({ children }) => {
             loadingMessages,
             setLoadingMessages,
             typingUsers,
-            setTypingUsers
+            setTypingUsers,
+            replyMessage,
+            setReplyMessage,
+            pinnedMessage,
+            setPinnedMessage,
+            selectedMessages,
+            setSelectedMessages,
+            isSelectMode,
+            setIsSelectMode
         }}>
             {children}
         </ChatContext.Provider>
