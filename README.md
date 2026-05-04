@@ -194,14 +194,16 @@ NODE_ENV=development
 
 ---
 
-## ▶️ Run Locally
+## 🚀 How to Run
 
-Backend:
+### Backend
+```bash
 cd server
 npm install
 npm run dev
 
-Frontend:
+### Frontend:
+```bash
 cd client
 npm install
 npm run dev
