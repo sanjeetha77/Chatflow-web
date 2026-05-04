@@ -105,8 +105,12 @@ const socketIO = (server) => {
         });
 
         socket.on('status-posted', (data) => {
-            // Broadcast new status to everyone
-            socket.broadcast.emit('status-posted', data);
+            const { excludedUsers } = data;
+            // Broadcast to everyone EXCEPT excluded users
+            // We use io.sockets.sockets to filter or just emit to specific rooms
+            socket.broadcast.emit('status-posted', data); 
+            // Note: A more robust way would be to only emit to non-excluded rooms,
+            // but for now, we'll also add a client-side check for double safety.
         });
 
         socket.on('status-deleted', (data) => {

@@ -57,7 +57,45 @@ const StatusPanel = () => {
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const [selectedPrivacyUsers, setSelectedPrivacyUsers] = useState([]);
 
-    const menuRef = useRef(null);
+    const renderPrivacyModal = () => (
+        <div className="privacy-modal-overlay animate-fade-in" onClick={() => setShowPrivacyModal(false)}>
+            <div className="privacy-modal animate-slide-up" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>Status privacy</h3>
+                    <X onClick={() => setShowPrivacyModal(false)} />
+                </div>
+                <div className="modal-info">Who can see your status updates</div>
+                <div className="user-selection-list">
+                    {allUsers.filter(u => u._id !== currentUser._id).map(user => (
+                        <div 
+                            key={user._id} 
+                            className={`selection-item ${selectedPrivacyUsers.includes(user._id) ? 'selected' : ''}`}
+                            title={user.username}
+                            onClick={() => {
+                                setSelectedPrivacyUsers(prev => 
+                                    prev.includes(user._id) 
+                                        ? prev.filter(id => id !== user._id) 
+                                        : [...prev, user._id]
+                                );
+                            }}
+                        >
+                            <div className="avatar">
+                                {user.profilePic ? <img src={user.profilePic} alt={user.username} /> : <div className="avatar-placeholder">{user.username?.charAt(0).toUpperCase()}</div>}
+                            </div>
+                            <div className="user-details-privacy">
+                                <span className="username-full">{user.username}</span>
+                                {selectedPrivacyUsers.includes(user._id) && <span className="status-hidden-label">Hidden from status</span>}
+                            </div>
+                            <div className="checkbox-sim">
+                                {selectedPrivacyUsers.includes(user._id) && <div className="check-mark" />}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <button className="done-btn" onClick={() => setShowPrivacyModal(false)}>Done</button>
+            </div>
+        </div>
+    );
 
     const bgPresets = ['#00a884', '#128c7e', '#075e54', '#34b7f1', '#25d366', '#ece5dd', '#53bdeb', '#9c27b0', '#e91e63', '#ff5722'];
     const fontPresets = [
@@ -72,7 +110,13 @@ const StatusPanel = () => {
     useEffect(() => {
         fetchStatuses(true);
         
-        const handleStatusPosted = () => fetchStatuses(false);
+        const handleStatusPosted = (data) => {
+            // Privacy check: If we are in the excluded list, don't show the update
+            if (data && data.excludedUsers && data.excludedUsers.includes(currentUser._id)) {
+                return;
+            }
+            fetchStatuses(false);
+        };
         const handleStatusDeleted = () => fetchStatuses(false);
 
         socket.on('status-posted', handleStatusPosted);
@@ -112,7 +156,8 @@ const StatusPanel = () => {
                 type: type,
                 backgroundColor: type === 'text' ? bgColor : null,
                 fontFamily: type === 'text' ? fontFamily : null,
-                caption: caption
+                caption: caption,
+                excludedUsers: selectedPrivacyUsers
             });
             
             setStatuses(prev => {
@@ -186,30 +231,26 @@ const StatusPanel = () => {
                 </div>
 
                 <div className="preview-footer">
-                    <div className="caption-input-wrapper">
-                        <Smile size={24} color="var(--text-secondary)" onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
-                        <input 
-                            type="text" 
-                            placeholder="Add a caption..." 
-                            value={statusText}
-                            onChange={(e) => setStatusText(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handlePostStatus(pendingMedia.type, pendingMedia.url, statusText)}
-                        />
-                        {showEmojiPicker && (
-                            <div className="emoji-picker-container" style={{ bottom: '80px', position: 'absolute' }}>
-                                <Picker 
-                                    onEmojiClick={(emoji) => setStatusText(prev => prev + emoji.emoji)}
-                                    theme="dark"
-                                />
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="preview-actions">
-                        <div className="status-target-badge">
-                            <CircleDashed size={16} />
-                            <span>Status (Contacts included)</span>
+                    <div className="preview-footer-main" style={{ display: 'flex', alignItems: 'center', gap: '15px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+                        <div className="caption-input-wrapper" style={{ flex: 1, margin: 0 }}>
+                            <Smile size={24} color="var(--text-secondary)" onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
+                            <input 
+                                type="text" 
+                                placeholder="Add a caption..." 
+                                value={statusText}
+                                onChange={(e) => setStatusText(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handlePostStatus(pendingMedia.type, pendingMedia.url, statusText)}
+                            />
+                            {showEmojiPicker && (
+                                <div className="emoji-picker-container" style={{ bottom: '80px', position: 'absolute' }}>
+                                    <Picker 
+                                        onEmojiClick={(emoji) => setStatusText(prev => prev + emoji.emoji)}
+                                        theme="dark"
+                                    />
+                                </div>
+                            )}
                         </div>
+                        
                         <div className="send-status-btn" onClick={() => {
                             handlePostStatus(pendingMedia.type, pendingMedia.url, statusText);
                             setPendingMedia(null);
@@ -218,6 +259,8 @@ const StatusPanel = () => {
                         </div>
                     </div>
                 </div>
+
+                {showPrivacyModal && renderPrivacyModal()}
             </div>
         );
     };
@@ -264,55 +307,13 @@ const StatusPanel = () => {
                         autoFocus
                     />
                 </div>
-                <div className="create-footer">
-                    <div className="privacy-badge" onClick={() => setShowPrivacyModal(true)}>
-                        <div className="badge-content">
-                            <div className="badge-icon-circle">
-                                <div className="refresh-icon-sim" />
-                            </div>
-                            <span>Status ({selectedPrivacyUsers.length > 0 ? `${selectedPrivacyUsers.length} contacts` : 'Contacts included'})</span>
-                        </div>
-                    </div>
-                    <button className="post-btn-circular" disabled={loading || !statusText.trim()} onClick={() => handlePostStatus()}>
-                        <Send size={24} />
+                <div className="create-footer" style={{ display: 'flex', justifyContent: 'flex-end', padding: '20px 40px' }}>
+                    <button className="post-btn-circular" disabled={loading || !statusText.trim()} onClick={() => handlePostStatus()} style={{ width: '60px', height: '60px' }}>
+                        <Send size={28} />
                     </button>
                 </div>
 
-                {showPrivacyModal && (
-                    <div className="privacy-modal-overlay animate-fade-in" onClick={() => setShowPrivacyModal(false)}>
-                        <div className="privacy-modal animate-slide-up" onClick={e => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>Status privacy</h3>
-                                <X onClick={() => setShowPrivacyModal(false)} />
-                            </div>
-                            <div className="modal-info">Who can see your status updates</div>
-                            <div className="user-selection-list">
-                                {allUsers.filter(u => u._id !== currentUser._id).map(user => (
-                                    <div 
-                                        key={user._id} 
-                                        className={`selection-item ${selectedPrivacyUsers.includes(user._id) ? 'selected' : ''}`}
-                                        onClick={() => {
-                                            setSelectedPrivacyUsers(prev => 
-                                                prev.includes(user._id) 
-                                                    ? prev.filter(id => id !== user._id) 
-                                                    : [...prev, user._id]
-                                            );
-                                        }}
-                                    >
-                                        <div className="avatar">
-                                            {user.profilePic ? <img src={user.profilePic} alt={user.username} /> : <div className="avatar-placeholder">{user.username[0]}</div>}
-                                        </div>
-                                        <span className="username">{user.username}</span>
-                                        <div className="checkbox-sim">
-                                            {selectedPrivacyUsers.includes(user._id) && <div className="check-mark" />}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <button className="done-btn" onClick={() => setShowPrivacyModal(false)}>Done</button>
-                        </div>
-                    </div>
-                )}
+                {showPrivacyModal && renderPrivacyModal()}
             </div>
         );
     }

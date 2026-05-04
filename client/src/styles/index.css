@@ -4081,3 +4081,34 @@ html {
   opacity: 0.9;
   transform: translateY(-1px);
 }
+
+/* Privacy Modal Enhancements */
+.user-details-privacy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.username-full {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.status-hidden-label {
+  font-size: 12px;
+  color: #ff4b4b;
+  font-weight: 500;
+}
+
+.selection-item {
+  transition: background-color 0.2s;
+  padding: 12px 10px;
+  margin: 0 -10px;
+  border-radius: 8px;
+}
+
+.selection-item:hover {
+  background-color: var(--bg-active);
+}

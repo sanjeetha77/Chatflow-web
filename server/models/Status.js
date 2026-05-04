@@ -34,7 +34,11 @@ const statusSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,
         default: () => new Date(Date.now() + 24 * 60 * 60 * 1000)
-    }
+    },
+    excludedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 });
 
 module.exports = mongoose.model('Status', statusSchema);

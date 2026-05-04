@@ -5,7 +5,7 @@ const User = require('../models/User');
 // @desc    Post a new status
 // @route   POST /api/status
 const postStatus = async (req, res) => {
-    const { userId, content, type, backgroundColor, fontFamily, caption } = req.body;
+    const { userId, content, type, backgroundColor, fontFamily, caption, excludedUsers } = req.body;
     try {
         const newStatus = await Status.create({
             userId,
@@ -13,7 +13,8 @@ const postStatus = async (req, res) => {
             type,
             backgroundColor,
             fontFamily,
-            caption
+            caption,
+            excludedUsers: excludedUsers || []
         });
         
         const populatedStatus = await newStatus.populate('userId', 'username profilePic');
@@ -29,7 +30,10 @@ const getStatuses = async (req, res) => {
     const { currentUserId } = req.query;
     try {
         const now = new Date();
-        const statuses = await Status.find({ expiresAt: { $gt: now } })
+        const statuses = await Status.find({ 
+            expiresAt: { $gt: now },
+            excludedUsers: { $ne: currentUserId } 
+        })
             .populate('userId', 'username profilePic')
             .sort({ createdAt: -1 });
             
