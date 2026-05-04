@@ -199,7 +199,6 @@ NODE_ENV=development
 
 Follow the steps below to configure MongoDB Atlas for this project:
 
----
 
 ### 🚀 Step 1: Create a MongoDB Atlas Account
 
@@ -249,7 +248,7 @@ Follow the steps below to configure MongoDB Atlas for this project:
 
 Example:
 
-```id="m9az1k"
+```
 mongodb+srv://<username>:<password>@cluster.mongodb.net/chatflow
 ```
 
@@ -263,7 +262,7 @@ server/.env
 
 Add your MongoDB connection string:
 
-```id="2b4m7c"
+```
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/chatflow
 ```
 
