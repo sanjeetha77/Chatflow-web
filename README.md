@@ -1,4 +1,4 @@
-# 💬 ChatFlow Web — Full Stack WhatsApp Web Clone
+# ChatFlow Web — Full Stack WhatsApp Web Clone
 
 A full-stack real-time chat application inspired by WhatsApp Web, built to demonstrate scalable architecture, real-time communication, and clean code practices.
 
@@ -6,7 +6,7 @@ A full-stack real-time chat application inspired by WhatsApp Web, built to demon
 
 ---
 
-## 📖 Overview
+## Overview
 
 **Purpose**
 To build a real-time communication platform that mimics the core experience of WhatsApp Web.
@@ -26,7 +26,7 @@ To build a real-time communication platform that mimics the core experience of W
 
 ---
 
-## ✅ Task Requirement Mapping
+## Task Requirement Mapping
 
 ### 1. User Setup
 
@@ -71,9 +71,9 @@ To build a real-time communication platform that mimics the core experience of W
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔥 Core Features
+### Core Features
 
 - Real-time messaging (Socket.IO)
 - Persistent chat storage (MongoDB)
@@ -83,7 +83,7 @@ To build a real-time communication platform that mimics the core experience of W
   - Delivered
   - Seen
 
-### 🚀 Extended Features
+### Extended Features
 
 - Notifications panel
 - Status UI (prototype)
@@ -93,7 +93,7 @@ To build a real-time communication platform that mimics the core experience of W
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Layer             | Technology                         |
 | ----------------- | ---------------------------------- |
@@ -110,7 +110,7 @@ To build a real-time communication platform that mimics the core experience of W
 
 ---
 
-## 🧠 System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -123,7 +123,8 @@ graph TD
 ---
 
 
-## 🔄 Application Flow
+## Application Flow
+
 
 ```mermaid
 flowchart TD
@@ -140,7 +141,7 @@ flowchart TD
 ---
 
 
-## 🔁 Message Flow
+## Message Flow
 
 
 ```mermaid
@@ -155,7 +156,7 @@ sequenceDiagram
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```bash
 Chatflow-web/
@@ -184,7 +185,7 @@ Chatflow-web/
 ```
 ---
 
-## ⚙️ Environment Setup
+## Environment Setup
 
 ### Backend (server/.env)
 Create a .env file inside server/ folder:
@@ -195,19 +196,19 @@ NODE_ENV=development
 ```
 ---
 
-## 🧩 Database Setup (MongoDB Atlas)
+## Database Setup (MongoDB Atlas)
 
 Follow the steps below to configure MongoDB Atlas for this project:
 
 
-### 🚀 Step 1: Create a MongoDB Atlas Account
+### Step 1: Create a MongoDB Atlas Account
 
 * Go to: https://www.mongodb.com/atlas
 * Sign up or log in
 
 ---
 
-### 📁 Step 2: Create a Project
+### Step 2: Create a Project
 
 * Click **"New Project"**
 * Enter a project name
@@ -215,7 +216,7 @@ Follow the steps below to configure MongoDB Atlas for this project:
 
 ---
 
-### 🗄️ Step 3: Create a Cluster
+### Step 3: Create a Cluster
 
 * Click **"Create Cluster"**
 * Select **Free Tier (M0)**
@@ -225,14 +226,14 @@ Follow the steps below to configure MongoDB Atlas for this project:
 
 ---
 
-### 🔐 Step 4: Create Database User
+### Step 4: Create Database User
 
 * Provide a **username and password**
 * Save these credentials (you will need them later)
 
 ---
 
-### 🌐 Step 5: Setup Network Access
+### Step 5: Setup Network Access
 
 * Go to **Network Access**
 * Click **Add IP Address**
@@ -240,7 +241,7 @@ Follow the steps below to configure MongoDB Atlas for this project:
 
 ---
 
-### 🔗 Step 6: Get Connection String
+### Step 6: Get Connection String
 
 * Go to **Database → Connect**
 * Select **Drivers**
@@ -254,7 +255,7 @@ mongodb+srv://<username>:<password>@cluster.mongodb.net/chatflow
 
 ---
 
-### ⚙️ Step 7: Configure Environment Variable
+### Step 7: Configure Environment Variable
 
 Open the backend `.env` file:
 server/.env
@@ -282,7 +283,7 @@ Replace:
 
 ---
 
-### ⚠️ Important Notes
+### Important Notes
 
 * Do NOT share your MongoDB credentials publicly
 * Ensure `.env` is added to `.gitignore`
@@ -290,13 +291,13 @@ Replace:
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### Backend
 ```bash
 cd server
 npm install
-npm run dev
+node server.js
 ```
 
 ### Frontend:
@@ -308,7 +309,7 @@ npm run dev
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 - POST /api/auth
 - GET /api/users
@@ -317,14 +318,14 @@ npm run dev
 
 ---
 
-## 📸 Media Handling
+## Media Handling
 
 - Files stored in /uploads
 - Supports images, videos, documents
 
 ---
 
-## 🚧 Future Improvements
+## Future Improvements
 
 - Group chats
 - Online/offline presence
@@ -334,7 +335,7 @@ npm run dev
 
 ---
 
-## 📌 Submission Note
+## Submission Note
 
 This project was developed as part of the Humbletree Full Stack Developer Task to demonstrate:
 
