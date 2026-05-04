@@ -3171,11 +3171,12 @@ html {
 
 /* Viewer Footer Reply */
 .viewer-footer {
-  padding: 20px 40px 40px;
+  padding: 20px 30px 40px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Horizontal alignment */
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 16px;
   background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
   position: absolute;
   bottom: 0;
@@ -3256,10 +3257,11 @@ html {
 .reply-label {
   font-size: 14px;
   font-weight: 600;
-  letter-spacing: 1px;
-  color: rgba(255,255,255,0.9);
-  margin-top: 8px;
+  letter-spacing: 1.5px;
+  color: white;
+  margin-top: 0; /* Remove top margin for alignment */
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .status-caption {
@@ -3396,8 +3398,8 @@ html {
 .create-footer {
   padding: 24px 40px 40px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  justify-content: flex-end; /* Always right-aligned */
+  align-items: center;
 }
 
 .privacy-badge {
@@ -3948,13 +3950,13 @@ html {
 .caption-input-wrapper {
   background-color: rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
-  border-radius: 25px;
-  padding: 10px 20px;
+  border-radius: 30px;
+  padding: 6px 6px 6px 20px; /* Smaller right padding for button */
   display: flex;
   align-items: center;
-  gap: 15px;
-  width: 100%;
-  max-width: 600px;
+  gap: 12px;
+  width: 95%;
+  max-width: 700px;
   margin: 0 auto;
   position: relative;
 }
@@ -3971,7 +3973,7 @@ html {
 .preview-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end; /* Always right-aligned */
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
@@ -3989,20 +3991,22 @@ html {
 }
 
 .send-status-btn {
-  width: 55px;
-  height: 55px;
+  width: 44px;
+  height: 44px;
   background-color: var(--accent-green);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .send-status-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  filter: brightness(1.1);
 }
 
 .send-status-btn:active {

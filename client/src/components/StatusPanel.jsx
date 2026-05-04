@@ -56,6 +56,8 @@ const StatusPanel = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const [selectedPrivacyUsers, setSelectedPrivacyUsers] = useState([]);
+    const menuRef = useRef(null);
+    const myStatusMenuRef = useRef(null);
 
     const renderPrivacyModal = () => (
         <div className="privacy-modal-overlay animate-fade-in" onClick={() => setShowPrivacyModal(false)}>
@@ -117,14 +119,21 @@ const StatusPanel = () => {
             }
             fetchStatuses(false);
         };
-        const handleStatusDeleted = () => fetchStatuses(false);
+        const handleStatusDeleted = (data) => {
+            // If we are the one who deleted it, we already updated optimistically
+            if (data && data.userId === currentUser._id) return;
+            fetchStatuses(false);
+        };
 
         socket.on('status-posted', handleStatusPosted);
         socket.on('status-deleted', handleStatusDeleted);
 
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setShowMenu(false);
+                setShowPlusMenu(false);
+            }
+            if (myStatusMenuRef.current && !myStatusMenuRef.current.contains(event.target)) {
+                setShowMyStatusMenu(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -231,26 +240,23 @@ const StatusPanel = () => {
                 </div>
 
                 <div className="preview-footer">
-                    <div className="preview-footer-main" style={{ display: 'flex', alignItems: 'center', gap: '15px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-                        <div className="caption-input-wrapper" style={{ flex: 1, margin: 0 }}>
-                            <Smile size={24} color="var(--text-secondary)" onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
-                            <input 
-                                type="text" 
-                                placeholder="Add a caption..." 
-                                value={statusText}
-                                onChange={(e) => setStatusText(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handlePostStatus(pendingMedia.type, pendingMedia.url, statusText)}
-                            />
-                            {showEmojiPicker && (
-                                <div className="emoji-picker-container" style={{ bottom: '80px', position: 'absolute' }}>
-                                    <Picker 
-                                        onEmojiClick={(emoji) => setStatusText(prev => prev + emoji.emoji)}
-                                        theme="dark"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                        
+                    <div className="caption-input-wrapper">
+                        <Smile size={24} color="var(--text-secondary)" onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
+                        <input 
+                            type="text" 
+                            placeholder="Add a caption..." 
+                            value={statusText}
+                            onChange={(e) => setStatusText(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handlePostStatus(pendingMedia.type, pendingMedia.url, statusText)}
+                        />
+                        {showEmojiPicker && (
+                            <div className="emoji-picker-container" style={{ bottom: '80px', position: 'absolute' }}>
+                                <Picker 
+                                    onEmojiClick={(emoji) => setStatusText(prev => prev + emoji.emoji)}
+                                    theme="dark"
+                                />
+                            </div>
+                        )}
                         <div className="send-status-btn" onClick={() => {
                             handlePostStatus(pendingMedia.type, pendingMedia.url, statusText);
                             setPendingMedia(null);
@@ -307,9 +313,9 @@ const StatusPanel = () => {
                         autoFocus
                     />
                 </div>
-                <div className="create-footer" style={{ display: 'flex', justifyContent: 'flex-end', padding: '20px 40px' }}>
-                    <button className="post-btn-circular" disabled={loading || !statusText.trim()} onClick={() => handlePostStatus()} style={{ width: '60px', height: '60px' }}>
-                        <Send size={28} />
+                <div className="create-footer">
+                    <button className="post-btn-circular" disabled={loading || !statusText.trim()} onClick={() => handlePostStatus()}>
+                        <Send size={24} />
                     </button>
                 </div>
 
@@ -327,7 +333,7 @@ const StatusPanel = () => {
                         <div className="action-icon-container" onClick={() => setShowPlusMenu(!showPlusMenu)}>
                             <Plus size={24} style={{cursor: 'pointer'}} />
                             {showPlusMenu && (
-                                <div className="status-plus-menu animate-pop-in" onClick={e => e.stopPropagation()}>
+                                <div className="status-plus-menu animate-pop-in" ref={menuRef} onClick={e => e.stopPropagation()}>
                                     <div className="menu-item" onClick={() => { setShowCreateMode(true); setStatusType('text'); setShowPlusMenu(false); }}>
                                         <Type size={20} />
                                         <span>Text</span>
@@ -371,7 +377,7 @@ const StatusPanel = () => {
                                         </div>
                                     )}
                                     {showMyStatusMenu && (
-                                        <div className="status-plus-menu my-status-menu animate-pop-in" onClick={e => e.stopPropagation()}>
+                                        <div className="status-plus-menu my-status-menu animate-pop-in" ref={myStatusMenuRef} onClick={e => e.stopPropagation()}>
                                             <div className="menu-item" onClick={() => { setShowCreateMode(true); setStatusType('text'); setShowMyStatusMenu(false); }}>
                                                 <Type size={20} />
                                                 <span>Text</span>
@@ -567,17 +573,25 @@ export const StatusViewer = ({ statusGroups, initialUserIndex, onClose }) => {
 
     const handleDeleteStatus = async (e) => {
         if (e) e.stopPropagation();
-        
+        const statusToDeleteId = currentStatus?._id;
+        if (!statusToDeleteId) return;
+
         try {
-            await deleteStatus(currentStatus._id);
-            setShowDeleteConfirm(false);
-            setIsPaused(false);
+            // Stop playback immediately
+            setIsPaused(true);
             
+            await deleteStatus(statusToDeleteId);
+            setShowDeleteConfirm(false);
+            
+            // Store counts for navigation logic
+            const currentTotal = chronologicalStatuses.length;
+            const currentIndex = statusIndex;
+
             // Update local state in real-time
             setStatuses(prev => {
                 return prev.map(group => {
                     if (group.user._id === currentUser._id) {
-                        const updatedAll = group.allStatuses.filter(s => s._id !== currentStatus._id);
+                        const updatedAll = group.allStatuses.filter(s => s._id !== statusToDeleteId);
                         if (updatedAll.length === 0) return null;
                         return {
                             ...group,
@@ -590,22 +604,26 @@ export const StatusViewer = ({ statusGroups, initialUserIndex, onClose }) => {
             });
             
             // Emit via socket
-            socket.emit('status-deleted', { statusId: currentStatus._id, userId: currentUser._id });
+            socket.emit('status-deleted', { statusId: statusToDeleteId, userId: currentUser._id });
             
-            // Navigate or close
-            if (chronologicalStatuses.length === 1) {
+            // WhatsApp-style navigation logic
+            if (currentTotal === 1) {
+                // If it was the only status, close the viewer
                 onClose();
+            } else if (currentIndex === currentTotal - 1) {
+                // If we deleted the LAST one in the list, move to the new last one
+                setStatusIndex(prev => Math.max(0, prev - 1));
+                setIsPaused(false);
             } else {
-                // If we're deleting the last one, go back
-                if (statusIndex === chronologicalStatuses.length - 1) {
-                    handlePrev();
-                } else {
-                    // Otherwise stay at same index (which is now the next one)
-                    // but since handleNext increments, we just stay
-                }
+                // If there's a next status, the next one will automatically 
+                // take the current index after the state update.
+                // We just need to resume
+                setIsPaused(false);
             }
+
         } catch (error) {
-            console.error("Failed to delete status:", error);
+            console.error("Delete failed:", error);
+            setIsPaused(false);
         }
     };
 
