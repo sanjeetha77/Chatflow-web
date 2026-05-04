@@ -60,8 +60,13 @@ const ChatList = () => {
   useEffect(() => {
     fetchUsers();
     
-    socket.on('userJoined', (userId) => {
-      fetchUsers(true);
+    socket.on('new-user', (newUser) => {
+      // Add new user to state instantly without triggering a full network refetch
+      const isDuplicate = users.some(u => String(u._id) === String(newUser._id));
+      if (!isDuplicate && String(newUser._id) !== String(currentUser._id)) {
+        setUsers(prev => [...prev, newUser]);
+        setAllUsers(prev => [...prev, newUser]);
+      }
     });
 
     socket.on('receiveMessage', () => {
@@ -81,7 +86,7 @@ const ChatList = () => {
     });
 
     return () => {
-      socket.off('userJoined');
+      socket.off('new-user');
       socket.off('receiveMessage');
       socket.off('profileUpdated');
     };

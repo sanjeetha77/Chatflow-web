@@ -34,7 +34,7 @@ const Login = () => {
       // Delay navigation to show feedback message
       setTimeout(() => {
         login(user);
-        navigate('/');
+        navigate('/chat');
       }, 1500);
 
     } catch (err) {

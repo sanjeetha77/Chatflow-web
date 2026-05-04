@@ -23,7 +23,10 @@ const loginUser = async (req, res) => {
             isNew = true;
         }
 
-        res.status(200).json({ ...user.toObject(), isNew });
+        const userObj = user.toObject();
+        req.app.get('io').emit('new-user', userObj);
+
+        res.status(200).json({ ...userObj, isNew });
     } catch (error) {
         // Handle duplicate email error
         if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {

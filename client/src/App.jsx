@@ -20,11 +20,15 @@ function App() {
     <Router>
       <Routes>
         <Route 
-          path="/login" 
-          element={currentUser ? <Navigate to="/" replace /> : <Login />} 
+          path="/" 
+          element={<Navigate to={currentUser ? "/chat" : "/login"} replace />} 
         />
         <Route 
-          path="/" 
+          path="/login" 
+          element={currentUser ? <Navigate to="/chat" replace /> : <Login />} 
+        />
+        <Route 
+          path="/chat" 
           element={
             <ProtectedRoute>
               <Chat />

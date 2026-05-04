@@ -23,7 +23,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Initialize Sockets
-socketIO(server);
+const io = socketIO(server);
+app.set('io', io);
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
