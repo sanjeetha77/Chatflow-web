@@ -3,7 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const socketIO = require('./sockets/socket');
+const socketIO = require('./sockets');
 
 const path = require('path');
 
@@ -32,14 +32,8 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/status', require('./routes/statusRoutes'));
 
-// Basic error handler middleware
-app.use((err, req, res, next) => {
-    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-    res.status(statusCode).json({
-        message: err.message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-    });
-});
+// Error Handler Middleware
+app.use(require('./middleware/errorHandler'));
 
 const PORT = process.env.PORT || 5000;
 

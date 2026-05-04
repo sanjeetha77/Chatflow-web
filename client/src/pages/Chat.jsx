@@ -141,6 +141,16 @@ const Chat = () => {
         setOnlineUsers(users);
       };
 
+      const onMessageDeleted = ({ messageId }) => {
+        setMessages(prev => prev.filter(m => String(m._id) !== String(messageId)));
+      };
+
+      const onMessageReaction = ({ messageId, reactions }) => {
+        setMessages(prev => prev.map(msg => 
+          String(msg._id) === String(messageId) ? { ...msg, reactions } : msg
+        ));
+      };
+
       socket.on('connect', onConnect);
       socket.on('receiveMessage', onReceiveMessage);
       socket.on('messageDelivered', onMessageDelivered);
@@ -148,6 +158,8 @@ const Chat = () => {
       socket.on('typing', onTyping);
       socket.on('stopTyping', onStopTyping);
       socket.on('getOnlineUsers', onGetOnlineUsers);
+      socket.on('messageReaction', onMessageReaction);
+      socket.on('messageDeleted', onMessageDeleted);
 
       // Connect logic
       if (!socket.connected) {
@@ -165,6 +177,8 @@ const Chat = () => {
         socket.off('typing', onTyping);
         socket.off('stopTyping', onStopTyping);
         socket.off('getOnlineUsers', onGetOnlineUsers);
+        socket.off('messageReaction', onMessageReaction);
+        socket.off('messageDeleted', onMessageDeleted);
       };
     }
   }, [currentUser, fetchMessages]);

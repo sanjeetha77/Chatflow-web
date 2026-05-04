@@ -57,29 +57,8 @@ const ChatWindow = () => {
     fetchUsers();
   }, []);
 
-  // Socket Listeners for advanced features
-  useEffect(() => {
-    socket.on('messageDeleted', (data) => {
-        setMessages(prev => prev.filter(m => m._id !== data.messageId));
-    });
-
-    socket.on('messageForwarded', (data) => {
-        // Real-time forward notification if needed
-    });
-
-    socket.on('messageReacted', (data) => {
-        setMessages(prev => prev.map(msg => 
-            msg._id === data.messageId ? { ...msg, reactions: data.reactions } : msg
-        ));
-    });
-
-    return () => {
-        socket.off('messageDeleted');
-        socket.off('messageForwarded');
-        socket.off('messageReacted');
-    };
-  }, [setMessages]);
-
+  // Socket listeners are now handled in the parent Chat.jsx component to avoid duplication and conflicts.
+  
   // Handle scroll events to show/hide scroll button
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -301,9 +280,6 @@ const ChatWindow = () => {
                 
                 <div className="menu-item" onClick={() => { setShowClearChatModal(true); setShowMenu(false); }}>
                   <Trash2 size={18} /><span>Clear chat</span>
-                </div>
-                <div className="menu-item" onClick={() => { setShowDeleteChatModal(true); setShowMenu(false); }} style={{ color: '#ff4b4b' }}>
-                  <Trash2 size={18} /><span>Delete chat</span>
                 </div>
               </div>
             )}

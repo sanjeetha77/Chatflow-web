@@ -23,7 +23,10 @@ import NewChatModal from './NewChatModal';
 
 const Sidebar = () => {
   const { logout, currentUser } = useContext(AuthContext);
-  const { unreadCounts, activeTab, setActiveTab } = useContext(ChatContext);
+  const { 
+    unreadCounts, activeTab, setActiveTab, 
+    notificationCount, setNotificationCount 
+  } = useContext(ChatContext);
   const { theme, setTheme } = useContext(ThemeContext);
   const [showSettings, setShowSettings] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -34,7 +37,7 @@ const Sidebar = () => {
   const menuRef = useRef(null);
 
   const totalUnread = Object.values(unreadCounts).reduce((acc, count) => acc + count, 0);
-  const hasUnread = totalUnread > 0;
+  const hasUnread = notificationCount > 0;
 
   const handleThemeCycle = () => {
     if (theme === 'light') setTheme('dark');
@@ -72,16 +75,16 @@ const Sidebar = () => {
                <div className="ring-segment" />
             </div>
           </div>
-          <div className="sidebar-icon" title="Contacts">
-            <Users size={22} />
-          </div>
+
           <div 
             className={`sidebar-icon ${hasUnread ? 'has-notification' : ''}`} 
             title="Notifications"
-            onClick={() => setShowNotifications(true)}
+            onClick={() => {
+                setShowNotifications(true);
+            }}
           >
             <Bell size={22} />
-            {totalUnread > 0 && <span className="sidebar-badge">{totalUnread}</span>}
+            {notificationCount > 0 && <span className="sidebar-badge">{notificationCount}</span>}
           </div>
         </div>
         

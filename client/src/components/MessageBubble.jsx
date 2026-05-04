@@ -170,10 +170,21 @@ const MessageBubble = ({ message, onForwardClick, isHighlighted }) => {
       setMessages(prev => prev.map(m => m._id === message._id ? { ...m, reactions: updated.reactions } : m));
       
       // Emit to socket
+      const targetId = isSent 
+        ? (typeof message.receiverId === 'object' ? message.receiverId._id : message.receiverId)
+        : (typeof message.senderId === 'object' ? message.senderId._id : message.senderId);
+
+      // Ensure reactions is a plain object for socket emission
+      const plainReactions = updated.reactions && typeof updated.reactions.toJSON === 'function' 
+        ? updated.reactions.toJSON() 
+        : updated.reactions;
+
+      console.log(`[Reaction] Emitting reaction for ${message._id} to ${targetId}`, plainReactions);
+
       socket.emit('messageReacted', { 
         messageId: message._id, 
-        reactions: updated.reactions,
-        receiverId: isSent ? message.receiverId : message.senderId 
+        reactions: plainReactions,
+        receiverId: String(targetId)
       });
     } catch (error) {
       console.error('Failed to react:', error);
@@ -352,6 +363,17 @@ const MessageBubble = ({ message, onForwardClick, isHighlighted }) => {
                     alt={message.fileName} 
                     onClick={() => window.open(`${API_BASE_URL}${message.fileUrl}`, '_blank')}
                   />
+                </div>
+              ) : message.fileType === 'video' ? (
+                <div className="video-attachment">
+                  <video 
+                    src={`${API_BASE_URL}${message.fileUrl}`} 
+                    controls
+                    className="message-video"
+                    poster={`${API_BASE_URL}${message.fileUrl}#t=0.1`} // Try to show first frame
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               ) : message.fileType === 'audio' ? (
                 <AudioPlayer src={`${API_BASE_URL}${message.fileUrl}`} />

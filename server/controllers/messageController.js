@@ -1,222 +1,174 @@
-const Message = require('../models/Message');
+const messageService = require('../services/messageService');
 
 // @desc    Send a message
 // @route   POST /api/messages
-const sendMessage = async (req, res) => {
+const sendMessage = async (req, res, next) => {
     const { senderId, receiverId, message, replyTo } = req.body;
 
     if (!message) {
-        return res.status(400).json({ message: 'Empty message' });
+        res.status(400);
+        return next(new Error('Empty message'));
     }
 
     try {
-        const newMessage = await Message.create({
+        const newMessage = await messageService.sendMessage({
             senderId,
             receiverId,
             message,
-            replyTo: replyTo || null
+            replyTo
         });
-        
-        // Populate replyTo if exists
-        if (replyTo) {
-            await newMessage.populate('replyTo');
-        }
-
         res.status(201).json(newMessage);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Get messages for a specific chat
 // @route   GET /api/messages/:userId
-const getMessages = async (req, res) => {
+const getMessages = async (req, res, next) => {
     const { userId } = req.params;
     const { currentUserId } = req.query;
 
     try {
-        const messages = await Message.find({
-            $or: [
-                { senderId: currentUserId, receiverId: userId },
-                { senderId: userId, receiverId: currentUserId }
-            ],
-            deletedFor: { $ne: currentUserId }
-        })
-        .populate('replyTo')
-        .sort({ timestamp: 1 });
-        
+        const messages = await messageService.getMessagesBetweenUsers(userId, currentUserId);
         res.status(200).json(messages);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Delete a single message
 // @route   DELETE /api/messages/single/:messageId
-const deleteMessage = async (req, res) => {
+const deleteMessage = async (req, res, next) => {
     const { messageId } = req.params;
 
     try {
-        const deletedMessage = await Message.findByIdAndDelete(messageId);
+        const deletedMessage = await messageService.deleteMessageById(messageId);
         if (!deletedMessage) {
-            return res.status(404).json({ message: 'Message not found' });
+            res.status(404);
+            return next(new Error('Message not found'));
         }
         res.status(200).json({ message: 'Message deleted successfully', messageId });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Forward a message to multiple users
 // @route   POST /api/messages/forward
-const forwardMessage = async (req, res) => {
+const forwardMessage = async (req, res, next) => {
     const { senderId, receiverIds, messageContent } = req.body;
 
     try {
-        const forwardPromises = receiverIds.map(receiverId => 
-            Message.create({
-                senderId,
-                receiverId,
-                message: messageContent,
-                isForwarded: true
-            })
-        );
-        
-        const forwardedMessages = await Promise.all(forwardPromises);
+        const forwardedMessages = await messageService.forwardMessageToMultipleUsers(senderId, receiverIds, messageContent);
         res.status(201).json(forwardedMessages);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Toggle star on message
 // @route   PATCH /api/messages/star/:messageId
-const toggleStar = async (req, res) => {
+const toggleStar = async (req, res, next) => {
     const { messageId } = req.params;
 
     try {
-        const message = await Message.findById(messageId);
-        if (!message) return res.status(404).json({ message: 'Message not found' });
-
-        message.isStarred = !message.isStarred;
-        await message.save();
+        const message = await messageService.toggleStarOnMessage(messageId);
+        if (!message) {
+            res.status(404);
+            return next(new Error('Message not found'));
+        }
         res.status(200).json(message);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Toggle pin on message
 // @route   PATCH /api/messages/pin/:messageId
-const togglePin = async (req, res) => {
+const togglePin = async (req, res, next) => {
     const { messageId } = req.params;
 
     try {
-        const message = await Message.findById(messageId);
-        if (!message) return res.status(404).json({ message: 'Message not found' });
-
-        message.isPinned = !message.isPinned;
-        await message.save();
+        const message = await messageService.togglePinOnMessage(messageId);
+        if (!message) {
+            res.status(404);
+            return next(new Error('Message not found'));
+        }
         res.status(200).json(message);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Clear messages for a specific chat
 // @route   DELETE /api/messages/:userId
-const clearMessages = async (req, res) => {
+const clearMessages = async (req, res, next) => {
     const { userId } = req.params;
     const { currentUserId, deleteForEveryone } = req.query;
 
     try {
-        const query = {
-            $or: [
-                { senderId: currentUserId, receiverId: userId },
-                { senderId: userId, receiverId: currentUserId }
-            ]
-        };
-
-        if (deleteForEveryone === 'true') {
-            await Message.deleteMany(query);
-        } else {
-            // For each message, add currentUserId to deletedFor array if not already present
-            await Message.updateMany(query, {
-                $addToSet: { deletedFor: currentUserId }
-            });
-        }
+        await messageService.clearChat(userId, currentUserId, deleteForEveryone);
         res.status(200).json({ message: 'Chat cleared successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    React to a message
 // @route   PATCH /api/messages/react/:messageId
-const reactToMessage = async (req, res) => {
+const reactToMessage = async (req, res, next) => {
     const { messageId } = req.params;
     const { userId, emoji } = req.body;
 
     try {
-        const message = await Message.findById(messageId);
-        if (!message) return res.status(404).json({ message: 'Message not found' });
-
-        if (!message.reactions) message.reactions = new Map();
-        
-        // Toggle reaction: if same user+emoji, remove it. If different emoji, update it.
-        if (message.reactions.get(userId) === emoji) {
-            message.reactions.delete(userId);
-        } else {
-            message.reactions.set(userId, emoji);
+        const message = await messageService.reactToMessage(messageId, userId, emoji);
+        if (!message) {
+            res.status(404);
+            return next(new Error('Message not found'));
         }
-
-        await message.save();
         res.status(200).json(message);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Upload a file and create a message
 // @route   POST /api/messages/upload
-const uploadFile = async (req, res) => {
-    const { senderId, receiverId, message, fileType } = req.body;
-    const file = req.file;
-
-    if (!file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-    }
-
+const uploadFile = async (req, res, next) => {
     try {
-        const newMessage = await Message.create({
+        const { senderId, receiverId, message, fileType } = req.body;
+        const file = req.file;
+
+        if (!file) {
+            res.status(400);
+            return next(new Error('No file uploaded'));
+        }
+
+        const newMessage = await messageService.createMessageWithFile({
             senderId,
             receiverId,
-            message: message || '', // Caption
+            message: message || '',
             fileUrl: `/uploads/${file.filename}`,
             fileName: file.originalname,
-            fileType: fileType // 'image', 'video', 'doc', etc.
+            fileType: fileType
         });
-
         res.status(201).json(newMessage);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Edit a message
 // @route   PATCH /api/messages/:messageId
-const editMessage = async (req, res) => {
+const editMessage = async (req, res, next) => {
     const { messageId } = req.params;
     const { message } = req.body;
     try {
-        const updatedMessage = await Message.findByIdAndUpdate(
-            messageId, 
-            { message, isEdited: true }, 
-            { new: true }
-        ).populate('replyTo');
+        const updatedMessage = await messageService.editMessageById(messageId, message);
         res.status(200).json(updatedMessage);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 

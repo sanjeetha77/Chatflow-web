@@ -21,8 +21,15 @@ const InputBar = ({ onSendMessage, disabled, droppedFile, onClearDroppedFile }) 
   useEffect(() => {
     if (droppedFile) {
       setSelectedFile(droppedFile);
-      const isImage = droppedFile.type.startsWith('image/');
-      setFileType(isImage ? 'image' : 'doc');
+      if (droppedFile.type.startsWith('image/')) {
+        setFileType('image');
+      } else if (droppedFile.type.startsWith('video/')) {
+        setFileType('video');
+      } else if (droppedFile.type.startsWith('audio/')) {
+        setFileType('audio');
+      } else {
+        setFileType('doc');
+      }
       onClearDroppedFile();
     }
   }, [droppedFile, onClearDroppedFile]);
@@ -80,7 +87,13 @@ const InputBar = ({ onSendMessage, disabled, droppedFile, onClearDroppedFile }) 
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      setFileType('image');
+      if (file.type.startsWith('image/')) {
+        setFileType('image');
+      } else if (file.type.startsWith('video/')) {
+        setFileType('video');
+      } else {
+        setFileType('image'); // Fallback
+      }
       setShowPlusMenu(false);
     }
   };

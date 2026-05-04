@@ -1,17 +1,38 @@
 import React, { useContext, useMemo } from 'react';
-import { X, Bell, MessageSquare, AtSign, Info, ChevronRight } from 'lucide-react';
+import { X, Bell, MessageSquare, AtSign, Info, ChevronRight, CornerUpLeft } from 'lucide-react';
 import { socket } from '../socket/socket';
 import { AuthContext } from '../context/AuthContext';
 import { ChatContext } from '../context/ChatContext';
 
 const NotificationsPanel = ({ onClose }) => {
     const { currentUser } = useContext(AuthContext);
-    const { unreadCounts, setUnreadCounts, lastMessages, setSelectedChat, allUsers } = useContext(ChatContext);
+    const { 
+        unreadCounts, setUnreadCounts, lastMessages, setSelectedChat, allUsers,
+        notifications, setNotifications, setNotificationCount 
+    } = useContext(ChatContext);
 
-    // Filter unread messages
-    const unreadNotifications = useMemo(() => {
-        return Object.entries(unreadCounts)
-            .filter(([_, count]) => count > 0)
+    // Merge computed unread messages with explicit notifications
+    const allNotifications = useMemo(() => {
+        // Explicit notifications from socket (includes replies)
+        const explicit = notifications.map(n => {
+            const user = allUsers.find(u => String(u._id) === String(n.senderId));
+            const isReply = n.type === 'reply';
+            
+            return {
+                id: n.messageId,
+                type: n.type,
+                title: isReply ? `${user?.username || 'Someone'} replied` : (user?.username || 'New Message'),
+                userData: user,
+                content: n.text,
+                time: n.timestamp,
+                icon: isReply ? <CornerUpLeft size={16} /> : <MessageSquare size={16} />,
+                originalData: n
+            };
+        });
+
+        // Computed unread messages from regular chat (avoid duplicates if already in explicit)
+        const computed = Object.entries(unreadCounts)
+            .filter(([userId, count]) => count > 0 && !notifications.some(n => String(n.senderId) === String(userId)))
             .map(([userId, count]) => {
                 const user = allUsers.find(u => String(u._id) === String(userId));
                 return {
@@ -25,31 +46,11 @@ const NotificationsPanel = ({ onClose }) => {
                     icon: <MessageSquare size={16} />
                 };
             });
-    }, [unreadCounts, lastMessages, allUsers]);
 
-    // Mock data for mentions and alerts
-    const otherNotifications = [
-        {
-            id: 'mention-1',
-            type: 'mention',
-            title: 'You were mentioned',
-            content: '@julie check the latest project updates in the group.',
-            time: new Date(Date.now() - 3600000),
-            icon: <AtSign size={16} />
-        },
-        {
-            id: 'alert-1',
-            type: 'system',
-            title: 'Security Alert',
-            content: 'Your account was logged in from a new device.',
-            time: new Date(Date.now() - 86400000),
-            icon: <Info size={16} />
-        }
-    ];
-
-    const allNotifications = [...unreadNotifications, ...otherNotifications].sort((a, b) => 
-        new Date(b.time) - new Date(a.time)
-    );
+        return [...explicit, ...computed].sort((a, b) => 
+            new Date(b.time) - new Date(a.time)
+        );
+    }, [unreadCounts, lastMessages, allUsers, notifications]);
 
     const handleMarkAllRead = () => {
         // Emit markSeen for all unread chats
@@ -62,22 +63,28 @@ const NotificationsPanel = ({ onClose }) => {
             }
         });
         setUnreadCounts({});
+        setNotifications([]);
+        setNotificationCount(0);
     };
 
     const handleNotificationClick = (notification) => {
-        if (notification.type === 'message' && notification.userData) {
+        if ((notification.type === 'message' || notification.type === 'reply') && notification.userData) {
             // Mark this specific one as read
             socket.emit('markSeen', {
-                senderId: String(notification.id),
+                senderId: String(notification.userData._id),
                 receiverId: String(currentUser._id)
             });
-            setUnreadCounts(prev => ({ ...prev, [notification.id]: 0 }));
+            
+            setUnreadCounts(prev => ({ ...prev, [notification.userData._id]: 0 }));
+            
+            // Remove from explicit notifications
+            setNotifications(prev => prev.filter(n => n.messageId !== notification.id));
+            setNotificationCount(prev => Math.max(0, prev - 1));
             
             // Navigate to chat
             setSelectedChat(notification.userData);
             onClose();
-        } else if (notification.type === 'mention' || notification.type === 'system') {
-            // Just clear mock notifications if needed, or just close
+        } else {
             onClose();
         }
     };

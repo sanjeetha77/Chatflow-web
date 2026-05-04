@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { getStatuses, postStatus, markSeen, getViewers } from '../services/api';
 import { AuthContext } from './AuthContext';
 import { ThemeContext } from './ThemeContext';
+import { socket } from '../socket/socket';
 
 export const ChatContext = createContext();
 
@@ -23,6 +24,42 @@ export const ChatProvider = ({ children }) => {
         const saved = sessionStorage.getItem('chatflow_favourites');
         return saved ? JSON.parse(saved) : [];
     });
+    const [notifications, setNotifications] = useState(() => {
+        const saved = sessionStorage.getItem('chatflow_notifications');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [notificationCount, setNotificationCount] = useState(() => {
+        const saved = sessionStorage.getItem('chatflow_notification_count');
+        return saved ? Number(saved) : 0;
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('chatflow_notifications', JSON.stringify(notifications));
+        sessionStorage.setItem('chatflow_notification_count', notificationCount.toString());
+    }, [notifications, notificationCount]);
+
+    useEffect(() => {
+        socket.on('new_notification', (data) => {
+            console.log("New notification received:", data);
+            
+            // If the user is currently looking at this chat, don't show an explicit notification
+            // (The message will appear in the chat window anyway)
+            if (selectedChat && String(selectedChat._id) === String(data.senderId)) {
+                return;
+            }
+
+            setNotifications(prev => {
+                // Avoid duplicates by messageId
+                if (prev.some(n => n.messageId === data.messageId)) return prev;
+                return [data, ...prev];
+            });
+            setNotificationCount(prev => prev + 1);
+        });
+
+        return () => {
+            socket.off('new_notification');
+        };
+    }, [selectedChat]);
 
     useEffect(() => {
         sessionStorage.setItem('chatflow_favourites', JSON.stringify(favourites));
@@ -103,7 +140,11 @@ export const ChatProvider = ({ children }) => {
             setStatuses,
             fetchStatuses,
             showContactInfo,
-            setShowContactInfo
+            setShowContactInfo,
+            notifications,
+            setNotifications,
+            notificationCount,
+            setNotificationCount
         }}>
             {children}
         </ChatContext.Provider>

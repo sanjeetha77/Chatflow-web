@@ -60,7 +60,7 @@ const ChatList = () => {
   useEffect(() => {
     fetchUsers();
     
-    socket.on('new-user', (newUser) => {
+    socket.on('user:joined', (newUser) => {
       // Add new user to state instantly without triggering a full network refetch
       const isDuplicate = users.some(u => String(u._id) === String(newUser._id));
       if (!isDuplicate && String(newUser._id) !== String(currentUser._id)) {
@@ -86,7 +86,7 @@ const ChatList = () => {
     });
 
     return () => {
-      socket.off('new-user');
+      socket.off('user:joined');
       socket.off('receiveMessage');
       socket.off('profileUpdated');
     };
@@ -126,7 +126,6 @@ const ChatList = () => {
               className={loading ? 'spin' : ''} 
               onClick={fetchUsers}
             />
-            <Filter size={20} style={{cursor: 'pointer'}} />
           </div>
         </div>
         <div className="chatlist-search-container">

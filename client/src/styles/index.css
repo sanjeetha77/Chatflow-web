@@ -545,6 +545,75 @@ input {
   gap: 2px;
 }
 
+/* Media Attachments */
+.message-media-container {
+  margin-bottom: 6px;
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 320px;
+}
+
+.image-attachment img, 
+.video-attachment video {
+  max-width: 100%;
+  max-height: 450px;
+  display: block;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.video-attachment video {
+  background-color: #000;
+  cursor: pointer;
+}
+
+.file-attachment {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0,0,0,0.05);
+  padding: 10px;
+  border-radius: 8px;
+  gap: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.1);
+  transition: background-color 0.2s;
+}
+
+.file-attachment:hover {
+  background-color: rgba(0,0,0,0.08);
+}
+
+.file-icon-box {
+  width: 40px;
+  height: 40px;
+  background-color: var(--accent-green);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.file-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
 /* --- Authentic WhatsApp Input Bar --- */
 .input-bar-wrapper {
   background-color: var(--bg-sidebar);

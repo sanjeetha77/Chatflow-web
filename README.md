@@ -1,88 +1,223 @@
-# ChatFlow Web
+# 💬 ChatFlow Web — Full Stack WhatsApp Web Clone
 
-A premium, full-stack WhatsApp-inspired messaging application built with the MERN stack (MongoDB, Express, React, Node.js) and Socket.IO for real-time bidirectional communication.
+A full-stack real-time chat application inspired by WhatsApp Web, built to demonstrate scalable architecture, real-time communication, and clean code practices.
 
-## 🚀 Features
+> Developed as part of a full-stack evaluation task focusing on practical implementation, clarity, and system design.
 
-- **Real-Time Messaging**: Instant message delivery using Socket.IO.
-- **WhatsApp UI**: High-fidelity dark/light mode interface with a 3-panel layout.
-- **Authentication**: Simple and secure username/email-based login.
-- **Persistent Storage**: All messages and user data are stored in MongoDB.
-- **Theme Toggle**: Switch between Light and Dark modes.
-- **Responsive Design**: Optimized for desktop and mobile viewing.
+---
 
-## 🛠️ Technology Stack
+## 📖 Overview
 
-- **Frontend**: React, Lucide React (Icons), Axios, Socket.IO Client.
-- **Backend**: Node.js, Express.
-- **Database**: MongoDB (via Mongoose).
-- **Communication**: Socket.IO.
+**Purpose**
+To build a real-time communication platform that mimics the core experience of WhatsApp Web.
+
+**What was built**
+
+- Real-time messaging system using WebSockets
+- Persistent chat storage with MongoDB
+- Clean, modular frontend architecture
+- Media/file messaging support
+
+**Focus Areas**
+
+- Real-time synchronization
+- Full-stack integration
+- Clean and maintainable structure
+
+---
+
+## ✅ Task Requirement Mapping
+
+### 1. User Setup
+
+- Username-based authentication
+- Unique user identification (MongoDB ObjectId)
+- Multi-user chat capability
+
+### 2. Chat Interface
+
+- Two-panel layout (Chat List + Chat Window)
+- Active chat highlighting
+- Sender vs receiver message styling
+- Auto-scroll to latest message
+
+### 3. Messaging Functionality
+
+- Send/receive text and media messages
+- Messages stored in MongoDB
+- Chat history persistence after refresh
+- Chronological ordering
+- Metadata: senderId, receiverId, timestamp
+
+### 4. Backend APIs
+
+- POST /api/auth → Create/Login user
+- GET /api/users → Fetch users
+- POST /api/messages → Send message
+- GET /api/messages/:chatId → Get messages
+
+### 5. Real-Time Updates
+
+- Implemented using Socket.IO
+- Instant message delivery
+- Live UI updates without refresh
+
+### 6. Application Structure
+
+- Separate frontend and backend
+- Modular folder structure
+- Reusable React components
+- Service-based backend logic
+
+---
+
+## ✨ Features
+
+### 🔥 Core Features
+
+- Real-time messaging (Socket.IO)
+- Persistent chat storage (MongoDB)
+- File/media sharing (images, videos, docs)
+- Message status:
+  - Sent
+  - Delivered
+  - Seen
+
+### 🚀 Extended Features
+
+- Notifications panel
+- Status UI (prototype)
+- File preview modal
+- Message forwarding (UI)
+- Delete message functionality
+
+---
+
+## 🧰 Tech Stack
+
+Frontend: React, Vite, Axios
+Backend: Node.js, Express
+Database: MongoDB
+Real-Time: Socket.IO
+
+---
+
+## 🧠 System Architecture
+
+---
+
+## 🔄 Application Flow
+
+---
+
+## 🔁 Message Flow
+
+---
 
 ## 📂 Project Structure
 
-### Backend (`/server`)
+Chatflow-web/
+├── client/ (React frontend)
+├── server/ (Node.js backend)
+└── README.md
 
-- `server.js`: Entry point and middleware setup.
-- `routes/`: API endpoint definitions.
-- `controllers/`: Logic for authentication, users, and messages.
-- `models/`: Mongoose schemas for User and Message.
-- `sockets/`: Socket.IO event handlers.
+### Frontend
 
-### Frontend (`/client`)
+client/src/
 
-- `src/components/`: Reusable UI components (Sidebar, ChatList, ChatWindow, etc.).
-- `src/pages/`: Main application pages (Login, Chat).
-- `src/context/`: State management for Auth and Chat.
-- `src/services/`: API communication layer.
-- `src/socket/`: Socket initialization.
+- components/
+- context/
+- pages/
+- services/
+- socket/
 
-## ⚙️ Setup Instructions
+### Backend
 
-### Prerequisites
+server/
 
-- Node.js installed.
-- MongoDB instance (local or Atlas).
+- controllers/
+- models/
+- routes/
+- services/
+- sockets/
+- uploads/
 
-### 1. Backend Setup
+---
 
-1. Navigate to the `server` directory.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file with the following variables:
-   ```env
-   PORT=5000
-   MONGO_URI=your_mongodb_uri
-   ```
-4. Start the server:
-   ```bash
-   node server.js
-   ```
+## ⚙️ Environment Setup
 
-### 2. Frontend Setup
+### Backend (server/.env)
 
-1. Navigate to the `client` directory.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+PORT=5000
+MONGO_URI=your_mongodb_uri
+NODE_ENV=development
+
+### Frontend (client/.env)
+
+VITE_API_URL=http://localhost:5000
+VITE_SOCKET_URL=http://localhost:5000
+
+---
+
+## ▶️ Run Locally
+
+Backend:
+cd server
+npm install
+npm run dev
+
+Frontend:
+cd client
+npm install
+npm run dev
+
+---
 
 ## 📡 API Endpoints
 
-| Method | Endpoint                | Description                     |
-| :----- | :---------------------- | :------------------------------ |
-| POST   | `/api/auth/login`       | Login/Register a user           |
-| GET    | `/api/users`            | Fetch all registered users      |
-| GET    | `/api/messages/:userId` | Get message history with a user |
-| POST   | `/api/messages`         | Send a new message              |
-
-## 📸 Screenshots
-
-_(Add screenshots here after deployment)_
+- POST /api/auth
+- GET /api/users
+- POST /api/messages
+- GET /api/messages/:chatId
 
 ---
+
+## 📸 Media Handling
+
+- Files stored in /uploads
+- Supports images, videos, documents
+
+---
+
+## 🚧 Future Improvements
+
+- Group chats
+- Online/offline presence
+- Push notifications
+- Cloud storage
+- End-to-end encryption
+
+---
+
+## 🎯 Design Philosophy
+
+- Keep it simple
+- Avoid overengineering
+- Focus on clarity
+
+---
+
+## 📌 Submission Note
+
+This project demonstrates:
+
+- Full-stack development
+- Real-time systems
+- Clean architecture
+
+---
+
+## 👤 Author
+
+Sanjee (Sanjeetha S)
+Kumaraguru College of Technology

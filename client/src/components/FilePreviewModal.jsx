@@ -15,8 +15,10 @@ const FilePreviewModal = ({ file, fileType, onClose, onSend }) => {
         </div>
         
         <div className="file-preview-main">
-          {isImage ? (
+          {fileType === 'image' ? (
             <img src={URL.createObjectURL(file)} alt="preview" className="image-preview" />
+          ) : fileType === 'video' ? (
+            <video src={URL.createObjectURL(file)} controls className="video-preview" />
           ) : (
             <div className="doc-preview">
               <FileText size={80} color="#7f66ff" />
