@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Search, Filter, RefreshCw } from 'lucide-react';
+import { Search, Filter, RefreshCw, MessageSquare, CircleDashed } from 'lucide-react';
 import { socket } from '../socket/socket';
 import { getUsers } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -28,9 +28,9 @@ const ChatList = () => {
     }).toLowerCase();
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const data = await getUsers(currentUser._id);
       const otherUsers = data.filter(u => u._id.toString() !== currentUser._id.toString());
       setUsers(otherUsers);
@@ -53,7 +53,7 @@ const ChatList = () => {
       console.error('Error fetching users:', err);
       setError('Failed to load users');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
@@ -61,12 +61,12 @@ const ChatList = () => {
     fetchUsers();
     
     socket.on('userJoined', (userId) => {
-      fetchUsers();
+      fetchUsers(true);
     });
 
     socket.on('receiveMessage', () => {
-      // Still fetch users to update status/order, but lastMessages handles preview instantly
-      fetchUsers();
+      // Background update to sync unread counts/order without flickering
+      fetchUsers(true);
     });
 
     socket.on('profileUpdated', (data) => {
@@ -215,7 +215,13 @@ const ChatList = () => {
                       minHeight: '18px',
                       fontSize: '13px'
                     }}>
-                      {isTyping ? 'typing...' : (lastMsg?.message || 'No messages yet')}
+                      {isTyping ? 'typing...' : (
+                        lastMsg?.message?.startsWith('*Status Reply:*') ? (
+                          <span style={{ color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CircleDashed size={14} /> Status reply
+                          </span>
+                        ) : (lastMsg?.message || 'No messages yet')
+                      )}
                     </div>
                     {unreadCounts[user._id] > 0 && (
                       <div className="unread-badge" style={{

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import NotificationsPanel from './NotificationsPanel';
 import ProfilePanel from './ProfilePanel';
+import StatusPanel from './StatusPanel';
 import { AuthContext } from '../context/AuthContext';
 import { ChatContext } from '../context/ChatContext';
 import { ThemeContext } from '../context/ThemeContext';
@@ -22,7 +23,7 @@ import NewChatModal from './NewChatModal';
 
 const Sidebar = () => {
   const { logout, currentUser } = useContext(AuthContext);
-  const { unreadCounts } = useContext(ChatContext);
+  const { unreadCounts, activeTab, setActiveTab } = useContext(ChatContext);
   const { theme, setTheme } = useContext(ThemeContext);
   const [showSettings, setShowSettings] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -45,8 +46,13 @@ const Sidebar = () => {
     <>
       <div className="sidebar">
         <div className="sidebar-top">
-          <div className="sidebar-icon active" title="Chats">
+          <div 
+            className={`sidebar-icon ${activeTab === 'chats' ? 'active' : ''}`} 
+            title="Chats"
+            onClick={() => setActiveTab('chats')}
+          >
             <MessageSquare size={22} />
+            {totalUnread > 0 && <span className="sidebar-badge">{totalUnread}</span>}
           </div>
           <div 
             className="sidebar-icon" 
@@ -54,6 +60,17 @@ const Sidebar = () => {
             onClick={() => setShowNewChat(true)}
           >
             <SquarePen size={22} />
+          </div>
+          <div 
+            className={`sidebar-icon ${activeTab === 'status' ? 'active' : ''}`} 
+            title="Status"
+            onClick={() => setActiveTab('status')}
+          >
+            <div className="status-icon-custom">
+               <div className="ring-segment" />
+               <div className="ring-segment" />
+               <div className="ring-segment" />
+            </div>
           </div>
           <div className="sidebar-icon" title="Contacts">
             <Users size={22} />
@@ -106,7 +123,10 @@ const Sidebar = () => {
       {showNewChat && (
         <NewChatModal 
           onClose={() => setShowNewChat(false)} 
-          onSelectUser={(user) => setSelectedChat(user)} 
+          onSelectUser={(user) => {
+            setSelectedChat(user);
+            setActiveTab('chats');
+          }} 
         />
       )}
       {showNotifications && (

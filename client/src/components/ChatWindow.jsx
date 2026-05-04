@@ -167,6 +167,15 @@ const ChatWindow = () => {
         ...newMessage,
         status: 'sent'
       });
+
+      // Update last messages instantly for sender's chat list
+      setLastMessages(prev => ({
+        ...prev,
+        [selectedChat._id]: {
+          message: newMessage.message,
+          timestamp: newMessage.timestamp
+        }
+      }));
     } catch (err) {
       console.error('Failed to send message:', err);
     }

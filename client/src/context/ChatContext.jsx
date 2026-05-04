@@ -1,4 +1,7 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { getStatuses, postStatus, markSeen, getViewers } from '../services/api';
+import { AuthContext } from './AuthContext';
+import { ThemeContext } from './ThemeContext';
 
 export const ChatContext = createContext();
 
@@ -33,6 +36,19 @@ export const ChatProvider = ({ children }) => {
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [editingMessage, setEditingMessage] = useState(null);
     const [allUsers, setAllUsers] = useState([]);
+    const [activeTab, setActiveTab] = useState('chats'); // 'chats', 'status'
+    const [activeStatusUser, setActiveStatusUser] = useState(null);
+    const [statuses, setStatuses] = useState([]);
+
+    const fetchStatuses = async (currentUserId) => {
+        if (!currentUserId) return;
+        try {
+            const data = await getStatuses(currentUserId);
+            setStatuses(data);
+        } catch (error) {
+            console.error("Failed to fetch statuses in context:", error);
+        }
+    };
 
     return (
         <ChatContext.Provider value={{ 
@@ -63,7 +79,14 @@ export const ChatProvider = ({ children }) => {
             editingMessage,
             setEditingMessage,
             allUsers,
-            setAllUsers
+            setAllUsers,
+            activeTab,
+            setActiveTab,
+            activeStatusUser,
+            setActiveStatusUser,
+            statuses,
+            setStatuses,
+            fetchStatuses
         }}>
             {children}
         </ChatContext.Provider>

@@ -2,7 +2,7 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { 
   Check, CheckCheck, Clock, ChevronDown, Copy, Forward, Trash2, Smile, 
   CornerUpLeft, Pin, Star, LayoutGrid, Info, HelpCircle, Star as StarFilled,
-  FileText, Download, Play, Pause, Edit3
+  FileText, Download, Play, Pause, Edit3, CircleDashed
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { ChatContext } from '../context/ChatContext';
@@ -372,7 +372,26 @@ const MessageBubble = ({ message, onForwardClick, isHighlighted }) => {
             </div>
           )}
 
-          {message.message && <div className="message-text" id={`msg-${message._id}`}>{message.message}</div>}
+          {message.message && (
+            message.message.startsWith('*Status Reply:*') ? (
+              <div className="status-reply-content">
+                <div className="status-reply-box">
+                  <div className="status-reply-header">
+                    <CircleDashed size={12} className="status-reply-icon" />
+                    <span>Status</span>
+                  </div>
+                  <div className="status-reply-preview">
+                    {message.message.split('\n\n')[0].replace('*Status Reply:* ', '')}
+                  </div>
+                </div>
+                <div className="message-text main-text">
+                  {message.message.split('\n\n')[1] || ''}
+                </div>
+              </div>
+            ) : (
+              <div className="message-text" id={`msg-${message._id}`}>{message.message}</div>
+            )
+          )}
           
           {/* Reaction Badge (Bottom Right overlapping bubble) */}
           {message.reactions && Object.keys(message.reactions).length > 0 && (

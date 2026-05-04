@@ -29,6 +29,7 @@ socketIO(server);
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/status', require('./routes/statusRoutes'));
 
 // Basic error handler middleware
 app.use((err, req, res, next) => {

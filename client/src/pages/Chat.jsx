@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatList from '../components/ChatList';
+import StatusPanel, { StatusViewer } from '../components/StatusPanel';
 import ChatWindow from '../components/ChatWindow';
 import { ChatContext } from '../context/ChatContext';
 import { AuthContext } from '../context/AuthContext';
@@ -8,7 +9,11 @@ import { socket } from '../socket/socket';
 import { getMessages } from '../services/api';
 
 const Chat = () => {
-  const { selectedChat, setMessages, setOnlineUsers, setUnreadCounts, setLoadingMessages, setTypingUsers, setLastMessages } = useContext(ChatContext);
+  const { 
+    selectedChat, setMessages, setOnlineUsers, setUnreadCounts, 
+    setLoadingMessages, setTypingUsers, setLastMessages, activeTab,
+    activeStatusUser, setActiveStatusUser, statuses, fetchStatuses
+  } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [socketConnected, setSocketConnected] = useState(false);
   const selectedChatRef = useRef(selectedChat);
@@ -18,6 +23,12 @@ const Chat = () => {
   useEffect(() => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchStatuses(currentUser._id);
+    }
+  }, [currentUser]);
 
   // Memoized fetch function
   const fetchMessages = useCallback(async (showLoading = true) => {
@@ -166,12 +177,35 @@ const Chat = () => {
       <Sidebar />
       <div className="chat-main">
         <div className={`chat-list-wrapper ${selectedChat ? 'mobile-hidden' : ''}`}>
-          <ChatList />
+          {activeTab === 'chats' ? <ChatList /> : <StatusPanel />}
         </div>
         <div className={`chat-window-wrapper ${!selectedChat ? 'mobile-hidden' : ''}`}>
-          <ChatWindow />
+          {activeTab === 'chats' ? <ChatWindow /> : (
+              <div className="status-placeholder-main">
+                  <div className="status-placeholder">
+                      <div className="placeholder-icon-ring">
+                          <div className="ring-segment" />
+                      </div>
+                      <h2>Share status updates</h2>
+                      <p>Share photos, videos and text that disappear after 24 hours.</p>
+                  </div>
+              </div>
+          )}
         </div>
       </div>
+
+      {activeStatusUser && (
+          <div className="status-viewer-overlay-global">
+              <StatusViewer 
+                  statusGroups={[activeStatusUser]}
+                  initialUserIndex={0}
+                  onClose={() => {
+                      setActiveStatusUser(null);
+                      fetchStatuses(currentUser._id);
+                  }} 
+              />
+          </div>
+      )}
     </div>
   );
 };

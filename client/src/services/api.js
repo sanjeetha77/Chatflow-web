@@ -82,4 +82,42 @@ export const uploadFile = async (senderId, receiverId, file, fileType, message =
     return response.data;
 };
 
+export const uploadStatusMedia = async (userId, file) => {
+    const formData = new FormData();
+    formData.append('userId', userId);
+    formData.append('file', file);
+
+    const response = await api.post('/status/upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const getStatuses = async (currentUserId) => {
+    const response = await api.get('/status', { params: { currentUserId } });
+    return response.data;
+};
+
+export const postStatus = async (statusData) => {
+    const response = await api.post('/status', statusData);
+    return response.data;
+};
+
+export const markSeen = async (statusId, viewerId) => {
+    const response = await api.post('/status/view', { statusId, viewerId });
+    return response.data;
+};
+
+export const getViewers = async (statusId) => {
+    const response = await api.get(`/status/${statusId}/viewers`);
+    return response.data;
+};
+
+export const deleteStatus = async (statusId) => {
+    const response = await api.delete(`/status/${statusId}`);
+    return response.data;
+};
+
 export default api;

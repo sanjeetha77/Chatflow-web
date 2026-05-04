@@ -104,6 +104,16 @@ const socketIO = (server) => {
             });
         });
 
+        socket.on('status-posted', (data) => {
+            // Broadcast new status to everyone
+            socket.broadcast.emit('status-posted', data);
+        });
+
+        socket.on('status-deleted', (data) => {
+            // Broadcast status deletion to everyone
+            socket.broadcast.emit('status-deleted', data);
+        });
+
         socket.on('disconnect', () => {
             io.emit('getOnlineUsers', Array.from(onlineUsers));
         });
