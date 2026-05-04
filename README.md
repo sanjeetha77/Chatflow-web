@@ -119,6 +119,7 @@ graph TD
     Backend --> Socket[Socket.IO]
     Socket --> Client
 ```
+
 ---
 
 
@@ -135,6 +136,7 @@ flowchart TD
     Socket --> Receiver
     Receiver --> UIUpdate
 ```
+
 ---
 
 
@@ -149,6 +151,7 @@ sequenceDiagram
     Socket-->>Receiver: Deliver message
     Receiver->>Frontend: Render message
 ```
+
 ---
 
 ## 📂 Project Structure
