@@ -339,9 +339,9 @@ npm run dev
 
 This project was developed as part of the Humbletree Full Stack Developer Task to demonstrate:
 
-  Full-stack development capability
-  Clean architecture and structure
-  Real-time system design
-  Problem-solving approach under time constraints
+  * Full-stack development capability
+  * Clean architecture and structure
+  * Real-time system design
+  * Problem-solving approach under time constraints
 
 
