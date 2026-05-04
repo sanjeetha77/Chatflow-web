@@ -156,32 +156,31 @@ sequenceDiagram
 
 ## 📂 Project Structure
 
+```bash
 Chatflow-web/
-├── client/ (React frontend)
-├── server/ (Node.js backend)
+├── client/                # React Frontend
+│   ├── src/
+│   │   ├── components/    # UI Components
+│   │   ├── context/       # State Management
+│   │   ├── pages/         # Screens (Chat, Login)
+│   │   ├── services/      # API Calls
+│   │   ├── socket/        # Socket.IO Client
+│   │   └── App.jsx
+│   └── package.json
+│
+├── server/                # Node.js Backend
+│   ├── controllers/       # Request Handlers
+│   ├── models/            # MongoDB Schemas
+│   ├── routes/            # API Routes
+│   ├── services/          # Business Logic
+│   ├── sockets/           # Socket Events
+│   ├── config/            # DB Configuration
+│   ├── uploads/           # Media Files
+│   └── server.js
+│
+├── .gitignore
 └── README.md
-
-### Frontend
-
-client/src/
-
-- components/
-- context/
-- pages/
-- services/
-- socket/
-
-### Backend
-
-server/
-
-- controllers/
-- models/
-- routes/
-- services/
-- sockets/
-- uploads/
-
+```
 ---
 
 ## ⚙️ Environment Setup
@@ -270,6 +269,7 @@ Replace:
 
 * `<username>` → your database username
 * `<password>` → your database password
+```
 
 ---
 
@@ -333,7 +333,7 @@ npm run dev
 
 ---
 
-📌 Submission Note
+## 📌 Submission Note
 
 This project was developed as part of the Humbletree Full Stack Developer Task to demonstrate:
 
