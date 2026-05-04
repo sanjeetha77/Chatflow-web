@@ -112,17 +112,18 @@ To build a real-time communication platform that mimics the core experience of W
 
 ## 🧠 System Architecture
 
-``` mermaid
+```mermaid
 graph TD
     Client[React Frontend] --> Backend[Node.js Server]
     Backend --> DB[(MongoDB)]
     Backend --> Socket[Socket.IO]
     Socket --> Client
-
+```
 ---
 
 ## 🔄 Application Flow
-``` mermaid
+
+```mermaid
 flowchart TD
     Login --> SelectUser
     SelectUser --> OpenChat
@@ -132,12 +133,12 @@ flowchart TD
     Backend --> Socket
     Socket --> Receiver
     Receiver --> UIUpdate
-
+```
 ---
 
 ## 🔁 Message Flow
 
-``` mermaid
+```mermaid
 sequenceDiagram
     User->>Frontend: Send message
     Frontend->>Backend: API call
@@ -145,7 +146,7 @@ sequenceDiagram
     Backend->>Socket: Emit event
     Socket-->>Receiver: Deliver message
     Receiver->>Frontend: Render message
-
+```
 ---
 
 ## 📂 Project Structure
