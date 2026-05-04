@@ -113,36 +113,36 @@ To build a real-time communication platform that mimics the core experience of W
 ## 🧠 System Architecture
 
 graph TD
-Client[React Frontend] --> Backend[Node.js Server]
-Backend --> DB[(MongoDB)]
-Backend --> Socket[Socket.IO]
-Socket --> Client
+    Client[React Frontend] --> Backend[Node.js Server]
+    Backend --> DB[(MongoDB)]
+    Backend --> Socket[Socket.IO]
+    Socket --> Client
 
 ---
 
 ## 🔄 Application Flow
 
 flowchart TD
-Login --> SelectUser
-SelectUser --> OpenChat
-OpenChat --> SendMessage
-SendMessage --> Backend
-Backend --> DB
-Backend --> Socket
-Socket --> Receiver
-Receiver --> UIUpdate
+    Login --> SelectUser
+    SelectUser --> OpenChat
+    OpenChat --> SendMessage
+    SendMessage --> Backend
+    Backend --> DB
+    Backend --> Socket
+    Socket --> Receiver
+    Receiver --> UIUpdate
 
 ---
 
 ## 🔁 Message Flow
 
 sequenceDiagram
-User->>Frontend: Send message
-Frontend->>Backend: API call
-Backend->>Database: Save message
-Backend->>Socket: Emit event
-Socket-->>Receiver: Deliver message
-Receiver->>Frontend: Render message
+    User->>Frontend: Send message
+    Frontend->>Backend: API call
+    Backend->>Database: Save message
+    Backend->>Socket: Emit event
+    Socket-->>Receiver: Deliver message
+    Receiver->>Frontend: Render message
 
 ---
 
