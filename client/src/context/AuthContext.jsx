@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('chatflow_user');
+        const storedUser = sessionStorage.getItem('chatflow_user');
         if (storedUser) {
             setCurrentUser(JSON.parse(storedUser));
         }
@@ -15,19 +15,19 @@ export const AuthProvider = ({ children }) => {
 
     const login = (user) => {
         setCurrentUser(user);
-        localStorage.setItem('chatflow_user', JSON.stringify(user));
+        sessionStorage.setItem('chatflow_user', JSON.stringify(user));
     };
 
     const logout = () => {
         setCurrentUser(null);
-        localStorage.removeItem('chatflow_user');
+        sessionStorage.removeItem('chatflow_user');
     };
 
     const updateUserProfile = async (data) => {
         try {
             const updatedUser = await updateApi(currentUser._id, data);
             setCurrentUser(updatedUser);
-            localStorage.setItem('chatflow_user', JSON.stringify(updatedUser));
+            sessionStorage.setItem('chatflow_user', JSON.stringify(updatedUser));
             return updatedUser;
         } catch (error) {
             console.error('Error updating profile:', error);

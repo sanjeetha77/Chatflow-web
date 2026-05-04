@@ -9,18 +9,32 @@ export const ChatProvider = ({ children }) => {
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
-    const [unreadCounts, setUnreadCounts] = useState({});
-    const [lastMessages, setLastMessages] = useState({}); // { userId: { message, timestamp } }
+    const [unreadCounts, setUnreadCounts] = useState(() => {
+        const saved = sessionStorage.getItem('chatflow_unread_counts');
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [lastMessages, setLastMessages] = useState(() => {
+        const saved = sessionStorage.getItem('chatflow_last_messages');
+        return saved ? JSON.parse(saved) : {};
+    }); // { userId: { message, timestamp } }
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [typingUsers, setTypingUsers] = useState({}); // { userId: boolean }
     const [favourites, setFavourites] = useState(() => {
-        const saved = localStorage.getItem('chatflow_favourites');
+        const saved = sessionStorage.getItem('chatflow_favourites');
         return saved ? JSON.parse(saved) : [];
     });
 
     useEffect(() => {
-        localStorage.setItem('chatflow_favourites', JSON.stringify(favourites));
+        sessionStorage.setItem('chatflow_favourites', JSON.stringify(favourites));
     }, [favourites]);
+
+    useEffect(() => {
+        sessionStorage.setItem('chatflow_unread_counts', JSON.stringify(unreadCounts));
+    }, [unreadCounts]);
+
+    useEffect(() => {
+        sessionStorage.setItem('chatflow_last_messages', JSON.stringify(lastMessages));
+    }, [lastMessages]);
 
     const toggleFavourite = (userId) => {
         setFavourites(prev => 
