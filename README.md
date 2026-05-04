@@ -142,6 +142,7 @@ flowchart TD
 
 ## 🔁 Message Flow
 
+
 ```mermaid
 sequenceDiagram
     User->>Frontend: Send message
