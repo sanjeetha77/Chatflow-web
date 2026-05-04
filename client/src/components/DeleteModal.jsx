@@ -1,7 +1,7 @@
 import React from 'react';
 import './DeleteModal.css';
 
-const DeleteModal = ({ isOpen, title, onCancel, onDeleteForMe, onDeleteForEveryone }) => {
+const DeleteModal = ({ isOpen, title, onCancel, onDeleteForMe, onDeleteForEveryone, deleteText = "Delete for me" }) => {
   if (!isOpen) return null;
 
   return (
@@ -15,7 +15,7 @@ const DeleteModal = ({ isOpen, title, onCancel, onDeleteForMe, onDeleteForEveryo
             </button>
           )}
           <button className="delete-modal-btn" onClick={onDeleteForMe}>
-            Delete for me
+            {deleteText}
           </button>
           <button className="delete-modal-btn cancel" onClick={onCancel}>
             Cancel

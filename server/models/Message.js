@@ -62,7 +62,11 @@ const messageSchema = new mongoose.Schema({
     isEdited: {
         type: Boolean,
         default: false
-    }
+    },
+    deletedFor: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 });
 
 module.exports = mongoose.model('Message', messageSchema);

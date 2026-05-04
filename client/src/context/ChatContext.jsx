@@ -39,6 +39,7 @@ export const ChatProvider = ({ children }) => {
     const [activeTab, setActiveTab] = useState('chats'); // 'chats', 'status'
     const [activeStatusUser, setActiveStatusUser] = useState(null);
     const [statuses, setStatuses] = useState([]);
+    const [showContactInfo, setShowContactInfo] = useState(false);
 
     const fetchStatuses = async (currentUserId) => {
         if (!currentUserId) return;
@@ -86,7 +87,9 @@ export const ChatProvider = ({ children }) => {
             setActiveStatusUser,
             statuses,
             setStatuses,
-            fetchStatuses
+            fetchStatuses,
+            showContactInfo,
+            setShowContactInfo
         }}>
             {children}
         </ChatContext.Provider>

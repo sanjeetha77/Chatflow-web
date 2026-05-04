@@ -3,16 +3,17 @@ import Sidebar from '../components/Sidebar';
 import ChatList from '../components/ChatList';
 import StatusPanel, { StatusViewer } from '../components/StatusPanel';
 import ChatWindow from '../components/ChatWindow';
+import ContactInfoPanel from '../components/ContactInfoPanel';
 import { ChatContext } from '../context/ChatContext';
 import { AuthContext } from '../context/AuthContext';
 import { socket } from '../socket/socket';
 import { getMessages } from '../services/api';
-
 const Chat = () => {
   const { 
     selectedChat, setMessages, setOnlineUsers, setUnreadCounts, 
     setLoadingMessages, setTypingUsers, setLastMessages, activeTab,
-    activeStatusUser, setActiveStatusUser, statuses, fetchStatuses
+    activeStatusUser, setActiveStatusUser, statuses, fetchStatuses,
+    showContactInfo, setShowContactInfo
   } = useContext(ChatContext);
   const { currentUser } = useContext(AuthContext);
   const [socketConnected, setSocketConnected] = useState(false);
@@ -192,6 +193,7 @@ const Chat = () => {
               </div>
           )}
         </div>
+        {showContactInfo && selectedChat && <ContactInfoPanel />}
       </div>
 
       {activeStatusUser && (

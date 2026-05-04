@@ -7,7 +7,7 @@ const api = axios.create({
 });
 
 export const login = async (username, email) => {
-    const response = await api.post('/auth/login', { username, email });
+    const response = await api.post('/auth/login-or-register', { username, email });
     return response.data;
 };
 
@@ -36,8 +36,8 @@ export const editMessage = async (messageId, message) => {
     return response.data;
 };
 
-export const clearChatMessages = async (userId, currentUserId) => {
-    const response = await api.delete(`/messages/${userId}?currentUserId=${currentUserId}`);
+export const clearChatMessages = async (userId, currentUserId, deleteForEveryone = false) => {
+    const response = await api.delete(`/messages/${userId}?currentUserId=${currentUserId}&deleteForEveryone=${deleteForEveryone}`);
     return response.data;
 };
 

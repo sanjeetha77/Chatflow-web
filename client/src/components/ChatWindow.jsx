@@ -15,7 +15,7 @@ const ChatWindow = () => {
     toggleFavourite, loadingMessages, typingUsers, setTypingUsers, 
     setLastMessages, replyMessage, setReplyMessage, pinnedMessage, 
     setPinnedMessage, isSelectMode, setIsSelectMode, selectedMessages, 
-    setSelectedMessages 
+    setSelectedMessages, showContactInfo, setShowContactInfo
   } = useContext(ChatContext);
   
   const { currentUser } = useContext(AuthContext);
@@ -277,7 +277,7 @@ const ChatWindow = () => {
             
             {showMenu && (
               <div className="chat-menu-dropdown">
-                <div className="menu-item" onClick={() => setShowMenu(false)}>
+                <div className="menu-item" onClick={() => { setShowContactInfo(true); setShowMenu(false); }}>
                   <Info size={18} /><span>Contact info</span>
                 </div>
                 <div className="menu-item" onClick={() => { setShowSearch(true); setShowMenu(false); }}>
@@ -422,6 +422,7 @@ const ChatWindow = () => {
         <DeleteModal 
           isOpen={showDeleteModal}
           title={`Delete ${selectedMessages.length} message${selectedMessages.length > 1 ? 's' : ''}?`}
+          deleteText="Delete"
           onCancel={() => setShowDeleteModal(false)}
           onDeleteForMe={handleBatchDelete}
         />
@@ -429,6 +430,7 @@ const ChatWindow = () => {
         <DeleteModal 
           isOpen={showClearChatModal}
           title="Clear this chat?"
+          deleteText="Delete"
           onCancel={() => setShowClearChatModal(false)}
           onDeleteForMe={async () => {
               await clearChatMessages(selectedChat._id, currentUser._id);
@@ -447,6 +449,7 @@ const ChatWindow = () => {
         <DeleteModal 
           isOpen={showDeleteChatModal}
           title="Delete this chat?"
+          deleteText="Delete"
           onCancel={() => setShowDeleteChatModal(false)}
           onDeleteForMe={() => {
               setSelectedChat(null);

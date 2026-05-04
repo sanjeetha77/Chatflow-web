@@ -39,7 +39,8 @@ const getMessages = async (req, res) => {
             $or: [
                 { senderId: currentUserId, receiverId: userId },
                 { senderId: userId, receiverId: currentUserId }
-            ]
+            ],
+            deletedFor: { $ne: currentUserId }
         })
         .populate('replyTo')
         .sort({ timestamp: 1 });
@@ -126,15 +127,24 @@ const togglePin = async (req, res) => {
 // @route   DELETE /api/messages/:userId
 const clearMessages = async (req, res) => {
     const { userId } = req.params;
-    const { currentUserId } = req.query;
+    const { currentUserId, deleteForEveryone } = req.query;
 
     try {
-        await Message.deleteMany({
+        const query = {
             $or: [
                 { senderId: currentUserId, receiverId: userId },
                 { senderId: userId, receiverId: currentUserId }
             ]
-        });
+        };
+
+        if (deleteForEveryone === 'true') {
+            await Message.deleteMany(query);
+        } else {
+            // For each message, add currentUserId to deletedFor array if not already present
+            await Message.updateMany(query, {
+                $addToSet: { deletedFor: currentUserId }
+            });
+        }
         res.status(200).json({ message: 'Chat cleared successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });

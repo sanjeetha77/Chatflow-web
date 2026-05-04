@@ -427,6 +427,7 @@ const MessageBubble = ({ message, onForwardClick, isHighlighted }) => {
       <DeleteModal 
         isOpen={showDeleteModal}
         title="Delete message?"
+        deleteText="Delete"
         onCancel={() => setShowDeleteModal(false)}
         onDeleteForMe={handleDelete}
         onDeleteForEveryone={isSent ? handleDelete : null}
