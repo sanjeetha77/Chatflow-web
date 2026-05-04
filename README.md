@@ -95,22 +95,54 @@ To build a real-time communication platform that mimics the core experience of W
 
 ## 🧰 Tech Stack
 
-Frontend: React, Vite, Axios
-Backend: Node.js, Express
-Database: MongoDB
-Real-Time: Socket.IO
+| Layer             | Technology                         |
+| ----------------- | ---------------------------------- |
+| Frontend          | React (Vite)                       |
+| State Management  | Context API                        |
+| Styling / UI      | CSS / Custom Styling               |
+| Backend           | Node.js + Express                  |
+| Real-Time         | Socket.IO (WebSockets)             |
+| Database          | MongoDB (Mongoose)                 |
+| API Communication | Axios (HTTP Requests)              |
+| File Handling     | Multer (File Uploads)              |
+| Authentication    | Basic Auth (Username-based / JWT*) |
+| Deployment Ready  | Localhost (Extendable to Cloud)    |
 
 ---
 
 ## 🧠 System Architecture
 
+graph TD
+Client[React Frontend] --> Backend[Node.js Server]
+Backend --> DB[(MongoDB)]
+Backend --> Socket[Socket.IO]
+Socket --> Client
+
 ---
 
 ## 🔄 Application Flow
 
+flowchart TD
+Login --> SelectUser
+SelectUser --> OpenChat
+OpenChat --> SendMessage
+SendMessage --> Backend
+Backend --> DB
+Backend --> Socket
+Socket --> Receiver
+Receiver --> UIUpdate
+
 ---
 
 ## 🔁 Message Flow
+
+sequenceDiagram
+User->>Frontend: Send message
+Frontend->>Backend: API call
+Backend->>Database: Save message
+Backend->>Socket: Emit event
+Socket-->>Receiver: Deliver message
+Receiver->>Frontend: Render message
 
 ---
 
@@ -151,11 +183,6 @@ server/
 PORT=5000
 MONGO_URI=your_mongodb_uri
 NODE_ENV=development
-
-### Frontend (client/.env)
-
-VITE_API_URL=http://localhost:5000
-VITE_SOCKET_URL=http://localhost:5000
 
 ---
 
