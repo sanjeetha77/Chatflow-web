@@ -187,10 +187,106 @@ server/
 ## ⚙️ Environment Setup
 
 ### Backend (server/.env)
-
+Create a .env file inside server/ folder:
+```bash
 PORT=5000
 MONGO_URI=your_mongodb_uri
 NODE_ENV=development
+```
+---
+
+## 🧩 Database Setup (MongoDB Atlas)
+
+Follow the steps below to configure MongoDB Atlas for this project:
+
+---
+
+### 🚀 Step 1: Create a MongoDB Atlas Account
+
+* Go to: https://www.mongodb.com/atlas
+* Sign up or log in
+
+---
+
+### 📁 Step 2: Create a Project
+
+* Click **"New Project"**
+* Enter a project name
+* Click **Next → Create Project**
+
+---
+
+### 🗄️ Step 3: Create a Cluster
+
+* Click **"Create Cluster"**
+* Select **Free Tier (M0)**
+* Choose a cloud provider & region
+* Enter a cluster name
+* Click **Create Deployment**
+
+---
+
+### 🔐 Step 4: Create Database User
+
+* Provide a **username and password**
+* Save these credentials (you will need them later)
+
+---
+
+### 🌐 Step 5: Setup Network Access
+
+* Go to **Network Access**
+* Click **Add IP Address**
+* Select **Allow Access from Anywhere (0.0.0.0/0)**
+
+---
+
+### 🔗 Step 6: Get Connection String
+
+* Go to **Database → Connect**
+* Select **Drivers**
+* Copy the connection string
+
+Example:
+
+```id="m9az1k"
+mongodb+srv://<username>:<password>@cluster.mongodb.net/chatflow
+```
+
+---
+
+### ⚙️ Step 7: Configure Environment Variable
+
+Open the backend `.env` file:
+server/.env
+```
+
+Add your MongoDB connection string:
+
+```id="2b4m7c"
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/chatflow
+```
+
+Replace:
+
+* `<username>` → your database username
+* `<password>` → your database password
+
+---
+
+### How It Works
+
+* The backend connects to MongoDB using `MONGO_URI`
+* Collections are created automatically when the app runs
+* No manual database setup is required
+
+---
+
+### ⚠️ Important Notes
+
+* Do NOT share your MongoDB credentials publicly
+* Ensure `.env` is added to `.gitignore`
+* Backend will fail if connection string is invalid
 
 ---
 
@@ -201,12 +297,14 @@ NODE_ENV=development
 cd server
 npm install
 npm run dev
+```
 
 ### Frontend:
 ```bash
 cd client
 npm install
 npm run dev
+```
 
 ---
 
@@ -236,25 +334,13 @@ npm run dev
 
 ---
 
-## 🎯 Design Philosophy
+📌 Submission Note
 
-- Keep it simple
-- Avoid overengineering
-- Focus on clarity
+This project was developed as part of the Humbletree Full Stack Developer Task to demonstrate:
 
----
+  Full-stack development capability
+  Clean architecture and structure
+  Real-time system design
+  Problem-solving approach under time constraints
 
-## 📌 Submission Note
 
-This project demonstrates:
-
-- Full-stack development
-- Real-time systems
-- Clean architecture
-
----
-
-## 👤 Author
-
-Sanjee (Sanjeetha S)
-Kumaraguru College of Technology
