@@ -121,6 +121,7 @@ graph TD
 ```
 ---
 
+
 ## 🔄 Application Flow
 
 ```mermaid
@@ -135,6 +136,7 @@ flowchart TD
     Receiver --> UIUpdate
 ```
 ---
+
 
 ## 🔁 Message Flow
 
